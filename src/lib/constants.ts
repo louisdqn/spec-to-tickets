@@ -16,3 +16,8 @@ export const MAX_DOCUMENT_TOKENS_WARNING = 5_000; // warn user above this
 // API key
 export const API_KEY_STORAGE_KEY = "spec-to-tickets-api-key";
 export const API_KEY_HEADER = "x-api-key";
+
+// Editable field options
+export const ALL_LABELS = ["frontend", "backend", "api", "database", "infrastructure", "design", "testing", "documentation"] as const;
+export const T_SHIRT_SIZES = ["XS", "S", "M", "L", "XL"] as const;
+export const TASK_SIZES = ["XS", "S", "M", "L"] as const;

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { parseMarkdown } from "@/lib/markdown";
 import { API_KEY_HEADER } from "@/lib/constants";
-import type { Epic, Dependency, Phase, Section, ApiMetadata } from "@/types";
+import type { Epic, Story, Task, Dependency, Phase, Section, ApiMetadata } from "@/types";
 
 // -- State machine --
 
@@ -52,9 +52,23 @@ type AppAction =
       cycleDetails: string[] | null;
     }
   | { type: "ERROR"; message: string }
-  | { type: "RESET" };
+  | { type: "RESET" }
+  | { type: "UPDATE_EPIC"; epicId: string; updates: Partial<Pick<Epic, "title" | "description">> }
+  | {
+      type: "UPDATE_STORY";
+      epicId: string;
+      storyId: string;
+      updates: Partial<Pick<Story, "title" | "estimate" | "labels" | "acceptance_criteria">>;
+    }
+  | {
+      type: "UPDATE_TASK";
+      epicId: string;
+      storyId: string;
+      taskId: string;
+      updates: Partial<Pick<Task, "title" | "estimate">>;
+    };
 
-function appReducer(state: AppState, action: AppAction): AppState {
+export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case "PREVIEW":
       return {
@@ -97,6 +111,51 @@ function appReducer(state: AppState, action: AppAction): AppState {
       };
     case "RESET":
       return { step: "idle" };
+    case "UPDATE_EPIC":
+      if (state.step !== "complete") return state;
+      return {
+        ...state,
+        epics: state.epics.map((e) =>
+          e.id === action.epicId ? { ...e, ...action.updates } : e,
+        ),
+      };
+    case "UPDATE_STORY":
+      if (state.step !== "complete") return state;
+      return {
+        ...state,
+        epics: state.epics.map((e) =>
+          e.id === action.epicId
+            ? {
+                ...e,
+                stories: e.stories.map((s) =>
+                  s.id === action.storyId ? { ...s, ...action.updates } : s,
+                ),
+              }
+            : e,
+        ),
+      };
+    case "UPDATE_TASK":
+      if (state.step !== "complete") return state;
+      return {
+        ...state,
+        epics: state.epics.map((e) =>
+          e.id === action.epicId
+            ? {
+                ...e,
+                stories: e.stories.map((s) =>
+                  s.id === action.storyId
+                    ? {
+                        ...s,
+                        tasks: s.tasks.map((t) =>
+                          t.id === action.taskId ? { ...t, ...action.updates } : t,
+                        ),
+                      }
+                    : s,
+                ),
+              }
+            : e,
+        ),
+      };
     default:
       return state;
   }
@@ -268,6 +327,7 @@ export default function Home() {
             decomposeMetadata={state.decomposeMetadata}
             dependenciesMetadata={state.dependenciesMetadata}
             onReset={() => dispatch({ type: "RESET" })}
+            dispatch={dispatch}
           />
         )}
 
@@ -306,6 +366,7 @@ function CompleteView({
   decomposeMetadata,
   dependenciesMetadata,
   onReset,
+  dispatch,
 }: {
   epics: Epic[];
   dependencies: Dependency[];
@@ -315,7 +376,38 @@ function CompleteView({
   decomposeMetadata: ApiMetadata;
   dependenciesMetadata: ApiMetadata;
   onReset: () => void;
+  dispatch: React.Dispatch<AppAction>;
 }) {
+  const handleUpdateEpic = useCallback(
+    (epicId: string, updates: Partial<Pick<Epic, "title" | "description">>) => {
+      dispatch({ type: "UPDATE_EPIC", epicId, updates });
+    },
+    [dispatch],
+  );
+
+  const handleUpdateStory = useCallback(
+    (
+      epicId: string,
+      storyId: string,
+      updates: Partial<Pick<Story, "title" | "estimate" | "labels" | "acceptance_criteria">>,
+    ) => {
+      dispatch({ type: "UPDATE_STORY", epicId, storyId, updates });
+    },
+    [dispatch],
+  );
+
+  const handleUpdateTask = useCallback(
+    (
+      epicId: string,
+      storyId: string,
+      taskId: string,
+      updates: Partial<Pick<Task, "title" | "estimate">>,
+    ) => {
+      dispatch({ type: "UPDATE_TASK", epicId, storyId, taskId, updates });
+    },
+    [dispatch],
+  );
+
   const totalStories = epics.reduce((sum, e) => sum + e.stories.length, 0);
   const totalTasks = epics.reduce(
     (sum, e) => sum + e.stories.reduce((s, st) => s + st.tasks.length, 0),
@@ -370,7 +462,12 @@ function CompleteView({
               <CardTitle>Ticket Hierarchy</CardTitle>
             </CardHeader>
             <CardContent className="max-h-[600px] overflow-y-auto">
-              <TicketTree epics={epics} />
+              <TicketTree
+                epics={epics}
+                onUpdateEpic={handleUpdateEpic}
+                onUpdateStory={handleUpdateStory}
+                onUpdateTask={handleUpdateTask}
+              />
             </CardContent>
           </Card>
         </div>
