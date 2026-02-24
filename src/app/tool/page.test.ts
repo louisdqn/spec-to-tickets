@@ -26,8 +26,8 @@ const mockEpics: Epic[] = [
         estimate: "M",
         labels: ["frontend", "backend"],
         tasks: [
-          { id: "TASK-001", title: "Create login form component", description: "Build the form", estimate: "S" },
-          { id: "TASK-002", title: "Add form validation logic", description: "Validate inputs", estimate: "XS" },
+          { id: "TASK-001", title: "Create login form component", description: "Build the form", estimate: "S", labels: ["frontend"] },
+          { id: "TASK-002", title: "Add form validation logic", description: "Validate inputs", estimate: "XS", labels: ["frontend"] },
         ],
       },
       {

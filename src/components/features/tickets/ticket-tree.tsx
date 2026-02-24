@@ -18,7 +18,7 @@ interface TicketTreeProps {
     epicId: string,
     storyId: string,
     taskId: string,
-    updates: Partial<Pick<Task, "title" | "estimate">>,
+    updates: Partial<Pick<Task, "title" | "estimate" | "labels">>,
   ) => void;
 }
 

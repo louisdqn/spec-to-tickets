@@ -2,6 +2,7 @@ export {
   // Enums
   TShirtSize,
   TaskSize,
+  TicketLabel,
   DependencyType,
   AmbiguitySeverity,
   // Schemas

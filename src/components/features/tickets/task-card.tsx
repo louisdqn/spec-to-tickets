@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LabelBadge } from "./label-badge";
 import { TASK_SIZES } from "@/lib/constants";
 import type { Task } from "@/types";
 
@@ -15,7 +16,7 @@ interface TaskCardProps {
     epicId: string,
     storyId: string,
     taskId: string,
-    updates: Partial<Pick<Task, "title" | "estimate">>,
+    updates: Partial<Pick<Task, "title" | "estimate" | "labels">>,
   ) => void;
 }
 
@@ -110,6 +111,13 @@ export function TaskCard({ task, epicId, storyId, onUpdateTask }: TaskCardProps)
           </div>
           {task.description && (
             <p className="mt-1 text-xs text-muted-foreground">{task.description}</p>
+          )}
+          {task.labels.length > 0 && (
+            <div className="mt-1.5 flex flex-wrap gap-1">
+              {task.labels.map((label) => (
+                <LabelBadge key={label} label={label} />
+              ))}
+            </div>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1">

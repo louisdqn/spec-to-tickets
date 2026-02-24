@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TaskCard } from "./task-card";
+import { LabelBadge, LABEL_COLORS } from "./label-badge";
 import { ALL_LABELS, T_SHIRT_SIZES } from "@/lib/constants";
-import type { Story, Task, AcceptanceCriterion } from "@/types";
+import type { Story, Task, AcceptanceCriterion, TicketLabel } from "@/types";
 
 interface StoryCardProps {
   story: Story;
@@ -21,7 +22,7 @@ interface StoryCardProps {
     epicId: string,
     storyId: string,
     taskId: string,
-    updates: Partial<Pick<Task, "title" | "estimate">>,
+    updates: Partial<Pick<Task, "title" | "estimate" | "labels">>,
   ) => void;
 }
 
@@ -145,8 +146,8 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
                     className="cursor-pointer"
                   >
                     <Badge
-                      variant={draftLabels.includes(label) ? "secondary" : "outline"}
-                      className="text-[10px]"
+                      variant="outline"
+                      className={`text-[10px] ${draftLabels.includes(label) ? `border-transparent ${LABEL_COLORS[label as TicketLabel]}` : "opacity-40"}`}
                     >
                       {label}
                     </Badge>
@@ -266,9 +267,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
               <p className="mt-1 text-sm font-medium">{story.title}</p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {story.labels.map((label) => (
-                  <Badge key={label} variant="secondary" className="text-[10px]">
-                    {label}
-                  </Badge>
+                  <LabelBadge key={label} label={label} />
                 ))}
               </div>
             </div>

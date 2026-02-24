@@ -20,11 +20,24 @@ export const AcceptanceCriterionSchema = z.object({
 });
 export type AcceptanceCriterion = z.infer<typeof AcceptanceCriterionSchema>;
 
+export const TicketLabel = z.enum([
+  "frontend",
+  "backend",
+  "infra",
+  "design",
+  "api",
+  "database",
+  "auth",
+  "testing",
+]);
+export type TicketLabel = z.infer<typeof TicketLabel>;
+
 export const TaskSchema = z.object({
   id: z.string().regex(/^TASK-\d{3}$/),
   title: z.string().min(5).max(120),
   description: z.string().max(500),
   estimate: TaskSize,
+  labels: z.array(TicketLabel).default([]),
 });
 export type Task = z.infer<typeof TaskSchema>;
 
@@ -33,18 +46,7 @@ export const StorySchema = z.object({
   title: z.string().min(5).max(120),
   acceptance_criteria: z.array(AcceptanceCriterionSchema).min(2).max(5),
   estimate: TShirtSize,
-  labels: z.array(
-    z.enum([
-      "frontend",
-      "backend",
-      "api",
-      "database",
-      "infrastructure",
-      "design",
-      "testing",
-      "documentation",
-    ]),
-  ),
+  labels: z.array(TicketLabel),
   tasks: z.array(TaskSchema),
 });
 export type Story = z.infer<typeof StorySchema>;

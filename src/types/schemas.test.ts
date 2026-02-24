@@ -44,6 +44,7 @@ describe("TaskSchema", () => {
     title: "Implement login form",
     description: "Build the login form with email and password fields",
     estimate: "S",
+    labels: ["frontend"],
   };
 
   it("accepts valid task", () => {
@@ -63,6 +64,29 @@ describe("TaskSchema", () => {
 
   it("rejects title shorter than 5 chars", () => {
     const result = TaskSchema.safeParse({ ...validTask, title: "Do" });
+    expect(result.success).toBe(false);
+  });
+
+  it("defaults labels to empty array when absent", () => {
+    const result = TaskSchema.safeParse({
+      id: validTask.id,
+      title: validTask.title,
+      description: validTask.description,
+      estimate: validTask.estimate,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.labels).toEqual([]);
+    }
+  });
+
+  it("accepts valid labels", () => {
+    const result = TaskSchema.safeParse({ ...validTask, labels: ["frontend", "api"] });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid label value", () => {
+    const result = TaskSchema.safeParse({ ...validTask, labels: ["documentation"] });
     expect(result.success).toBe(false);
   });
 });
@@ -136,6 +160,7 @@ describe("EpicSchema", () => {
             title: "Build login form",
             description: "Login form component",
             estimate: "S",
+            labels: ["frontend"],
           },
         ],
       },
@@ -207,7 +232,7 @@ describe("DecompositionResultSchema", () => {
               estimate: "M",
               labels: ["frontend"],
               tasks: [
-                { id: "TASK-001", title: "Build login form", description: "Form component", estimate: "S" },
+                { id: "TASK-001", title: "Build login form", description: "Form component", estimate: "S", labels: ["frontend"] },
               ],
             },
           ],
@@ -241,7 +266,7 @@ describe("DecompositionResultSchema", () => {
               estimate: "M",
               labels: ["frontend"],
               tasks: [
-                { id: "TASK-001", title: "Build login form", description: "Form component", estimate: "S" },
+                { id: "TASK-001", title: "Build login form", description: "Form component", estimate: "S", labels: ["frontend"] },
               ],
             },
           ],
@@ -272,7 +297,7 @@ describe("DecompositionResultSchema", () => {
               estimate: "M",
               labels: ["frontend"],
               tasks: [
-                { id: "TASK-001", title: "Build login form", description: "Form component", estimate: "S" },
+                { id: "TASK-001", title: "Build login form", description: "Form component", estimate: "S", labels: ["frontend"] },
               ],
             },
           ],

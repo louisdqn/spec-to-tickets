@@ -1,11 +1,12 @@
 "use client";
 
-import { useReducer, useCallback, useRef, useEffect } from "react";
+import { useState, useReducer, useCallback, useRef, useEffect, useMemo } from "react";
 import { Header } from "@/components/layout/header";
 import { ProcessingStatus } from "@/components/layout/processing-status";
 import { DocumentInput } from "@/components/features/input/document-input";
 import { SectionPreview } from "@/components/features/input/section-preview";
 import { TicketTree } from "@/components/features/tickets/ticket-tree";
+import { LabelFilter } from "@/components/features/tickets/label-filter";
 import { DependencyGraph } from "@/components/features/graph/dependency-graph";
 import { PhaseTimeline } from "@/components/features/graph/phase-timeline";
 import { ExportButton } from "@/components/features/export/export-button";
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { parseMarkdown } from "@/lib/markdown";
 import { API_KEY_HEADER } from "@/lib/constants";
-import type { Epic, Story, Task, Dependency, Phase, Section, Ambiguity, ApiMetadata } from "@/types";
+import type { Epic, Story, Task, TicketLabel, Dependency, Phase, Section, Ambiguity, ApiMetadata } from "@/types";
 
 // -- State machine --
 
@@ -68,7 +69,7 @@ type AppAction =
       epicId: string;
       storyId: string;
       taskId: string;
-      updates: Partial<Pick<Task, "title" | "estimate">>;
+      updates: Partial<Pick<Task, "title" | "estimate" | "labels">>;
     };
 
 export function appReducer(state: AppState, action: AppAction): AppState {
@@ -410,7 +411,7 @@ function CompleteView({
       epicId: string,
       storyId: string,
       taskId: string,
-      updates: Partial<Pick<Task, "title" | "estimate">>,
+      updates: Partial<Pick<Task, "title" | "estimate" | "labels">>,
     ) => {
       dispatch({ type: "UPDATE_TASK", epicId, storyId, taskId, updates });
     },
@@ -426,6 +427,25 @@ function CompleteView({
 
   // Extract document title from first epic or fallback
   const documentTitle = epics[0]?.title ?? "Untitled PRD";
+
+  // Label filter — client-side only, does NOT affect graph or export
+  const [selectedLabels, setSelectedLabels] = useState<TicketLabel[]>([]);
+
+  const filteredEpics = useMemo(() => {
+    if (selectedLabels.length === 0) return epics;
+    return epics
+      .map((epic) => ({
+        ...epic,
+        stories: epic.stories.filter((story) => {
+          const storyMatch = story.labels.some((l) => selectedLabels.includes(l));
+          const taskMatch = story.tasks.some((t) =>
+            t.labels.some((l) => selectedLabels.includes(l)),
+          );
+          return storyMatch || taskMatch;
+        }),
+      }))
+      .filter((epic) => epic.stories.length > 0);
+  }, [epics, selectedLabels]);
 
   return (
     <div>
@@ -475,11 +495,14 @@ function CompleteView({
         <div>
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle>Ticket Hierarchy</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Ticket Hierarchy</CardTitle>
+              </div>
+              <LabelFilter selected={selectedLabels} onChange={setSelectedLabels} />
             </CardHeader>
             <CardContent className="max-h-[600px] overflow-y-auto">
               <TicketTree
-                epics={epics}
+                epics={filteredEpics}
                 onUpdateEpic={handleUpdateEpic}
                 onUpdateStory={handleUpdateStory}
                 onUpdateTask={handleUpdateTask}

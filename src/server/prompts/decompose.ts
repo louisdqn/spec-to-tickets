@@ -43,8 +43,10 @@ Tasks may only use XS, S, M, or L. If a task would be XL, split it into multiple
 
 ## Labels
 
-Assign 1-3 labels per story from this taxonomy:
-frontend, backend, api, database, infrastructure, design, testing, documentation
+Assign 1-3 labels per story AND per task from this fixed set:
+frontend, backend, infra, design, api, database, auth, testing
+
+Every story and every task MUST have at least one label. Choose the most relevant labels based on the work involved.
 
 ## Ambiguity detection
 
@@ -155,12 +157,12 @@ export const DECOMPOSE_TOOL: ToolDefinition = {
                       enum: [
                         "frontend",
                         "backend",
+                        "infra",
+                        "design",
                         "api",
                         "database",
-                        "infrastructure",
-                        "design",
+                        "auth",
                         "testing",
-                        "documentation",
                       ],
                     },
                   },
@@ -191,8 +193,25 @@ export const DECOMPOSE_TOOL: ToolDefinition = {
                           description: "T-shirt size (XS/S/M/L only, no XL)",
                           enum: ["XS", "S", "M", "L"],
                         },
+                        labels: {
+                          type: "array",
+                          description: "1-3 technical domain labels for this task",
+                          items: {
+                            type: "string",
+                            enum: [
+                              "frontend",
+                              "backend",
+                              "infra",
+                              "design",
+                              "api",
+                              "database",
+                              "auth",
+                              "testing",
+                            ],
+                          },
+                        },
                       },
-                      required: ["id", "title", "description", "estimate"],
+                      required: ["id", "title", "description", "estimate", "labels"],
                     },
                     minItems: 1,
                   },
