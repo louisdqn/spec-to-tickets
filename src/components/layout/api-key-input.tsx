@@ -1,31 +1,29 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { API_KEY_STORAGE_KEY } from "@/lib/constants";
-
-function getStoredKey(): string {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
-}
 
 export function ApiKeyInput({
   onKeyChange,
 }: {
   onKeyChange: (key: string) => void;
 }) {
-  const [key, setKey] = useState(getStoredKey);
+  const [key, setKey] = useState("");
   const [isVisible, setIsVisible] = useState(false);
-  const [isSaved, setIsSaved] = useState(() => getStoredKey() !== "");
-  const notifiedRef = useRef(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (!notifiedRef.current && key) {
-      notifiedRef.current = true;
-      onKeyChange(key);
+    const stored = localStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
+    if (stored) {
+      setKey(stored);
+      setIsSaved(true);
+      onKeyChange(stored);
     }
-  }, [key, onKeyChange]);
+    setHydrated(true);
+  }, [onKeyChange]);
 
   const handleSave = useCallback(() => {
     if (!key.trim()) return;
