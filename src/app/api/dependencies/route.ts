@@ -1,0 +1,62 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod/v4";
+import { createAnthropicClient } from "@/server/anthropic";
+import { mapDependencies } from "@/server/services/dependencies";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { handleApiError, AppError } from "@/lib/errors";
+import { API_KEY_HEADER } from "@/lib/constants";
+
+const TicketSummarySchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string(),
+});
+
+const RequestBodySchema = z.object({
+  tickets: z.array(TicketSummarySchema).min(1),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    // Extract and validate API key
+    const apiKey = request.headers.get(API_KEY_HEADER);
+    if (!apiKey || !apiKey.startsWith("sk-")) {
+      throw new AppError("Missing or invalid API key", "INVALID_API_KEY", 401);
+    }
+
+    // Rate limiting
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+    const rateLimit = checkRateLimit(ip);
+    if (!rateLimit.allowed) {
+      const res = NextResponse.json(
+        { error: "Rate limit exceeded. Try again later.", code: "RATE_LIMITED" },
+        { status: 429 },
+      );
+      res.headers.set("X-RateLimit-Remaining", "0");
+      res.headers.set("X-RateLimit-Reset", new Date(rateLimit.resetAt).toISOString());
+      return res;
+    }
+
+    // Parse and validate request body
+    const body = await request.json();
+    const parsed = RequestBodySchema.safeParse(body);
+    if (!parsed.success) {
+      throw new AppError(
+        `Invalid request body: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
+        "INVALID_REQUEST",
+        400,
+      );
+    }
+
+    // Call dependency mapping service
+    const client = createAnthropicClient(apiKey);
+    const result = await mapDependencies(client, parsed.data.tickets);
+
+    const res = NextResponse.json({ data: result });
+    res.headers.set("X-RateLimit-Remaining", String(rateLimit.remaining));
+    return res;
+  } catch (error: unknown) {
+    const { error: message, code, status } = handleApiError(error);
+    return NextResponse.json({ error: message, code }, { status });
+  }
+}
