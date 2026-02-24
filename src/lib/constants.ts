@@ -1,7 +1,3 @@
-// Rate limiting
-export const RATE_LIMIT_MAX_REQUESTS = 5;
-export const RATE_LIMIT_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
-
 // LLM configuration
 export const LLM_MODEL = "claude-sonnet-4-5-20250929";
 export const LLM_TEMPERATURE = 0;

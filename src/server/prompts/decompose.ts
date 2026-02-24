@@ -79,10 +79,13 @@ export const DECOMPOSE_TOOL: ToolDefinition = {
             title: {
               type: "string",
               description: "Concise epic title (5-120 chars)",
+              minLength: 5,
+              maxLength: 120,
             },
             description: {
               type: "string",
               description: "Brief description of the epic scope (max 500 chars)",
+              maxLength: 500,
             },
             stories: {
               type: "array",
@@ -98,6 +101,8 @@ export const DECOMPOSE_TOOL: ToolDefinition = {
                   title: {
                     type: "string",
                     description: "Concise story title (5-120 chars)",
+                    minLength: 5,
+                    maxLength: 120,
                   },
                   acceptance_criteria: {
                     type: "array",
@@ -108,14 +113,17 @@ export const DECOMPOSE_TOOL: ToolDefinition = {
                         given: {
                           type: "string",
                           description: "The precondition or context",
+                          minLength: 1,
                         },
                         when: {
                           type: "string",
                           description: "The action or trigger",
+                          minLength: 1,
                         },
                         then: {
                           type: "string",
                           description: "The expected outcome",
+                          minLength: 1,
                         },
                       },
                       required: ["given", "when", "then"],
@@ -159,10 +167,13 @@ export const DECOMPOSE_TOOL: ToolDefinition = {
                         title: {
                           type: "string",
                           description: "Concise task title (5-120 chars)",
+                          minLength: 5,
+                          maxLength: 120,
                         },
                         description: {
                           type: "string",
                           description: "Implementation details (max 500 chars)",
+                          maxLength: 500,
                         },
                         estimate: {
                           type: "string",
