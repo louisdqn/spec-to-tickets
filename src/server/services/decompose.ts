@@ -11,6 +11,7 @@ import { LLM_MAX_TOKENS_DECOMPOSE, COST_PER_INPUT_TOKEN, COST_PER_OUTPUT_TOKEN }
 
 interface DecomposeServiceResult {
   epics: DecompositionResult["epics"];
+  ambiguities: DecompositionResult["ambiguities"];
   metadata: ApiMetadata;
 }
 
@@ -53,6 +54,7 @@ export async function decompose(
 
   return {
     epics: result.data.epics,
+    ambiguities: result.data.ambiguities,
     metadata: {
       token_usage: result.usage,
       estimated_cost_usd: Math.round(cost * 1000) / 1000,

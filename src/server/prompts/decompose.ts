@@ -46,11 +46,22 @@ Tasks may only use XS, S, M, or L. If a task would be XL, split it into multiple
 Assign 1-3 labels per story from this taxonomy:
 frontend, backend, api, database, infrastructure, design, testing, documentation
 
+## Ambiguity detection
+
+While decomposing, identify any vague, ambiguous, or incomplete requirements. For each, output:
+- "source": quote or reference the unclear text from the PRD
+- "issue": explain what is unclear or missing
+- "question": a specific clarifying question the PM should answer
+- "affected_ticket_ids": array of ticket IDs (EPIC/STORY/TASK) whose scope depends on the answer
+- "severity": "blocking" if the answer could change ticket structure/scope, "minor" if it only affects details
+
+Still decompose the full PRD using your best assumptions — ambiguities are informational, not blockers.
+
 ## Important
 
 - Every story must have at least one task
 - Be thorough — cover all requirements mentioned in the PRD
-- If the PRD is vague on implementation details, make reasonable technical assumptions
+- If the PRD is vague on implementation details, make reasonable technical assumptions and flag the ambiguity
 - Group related functionality into the same epic
 - Order epics and stories logically (foundational work first)`;
 
@@ -201,6 +212,50 @@ export const DECOMPOSE_TOOL: ToolDefinition = {
           required: ["id", "title", "description", "stories"],
         },
         minItems: 1,
+      },
+      ambiguities: {
+        type: "array",
+        description:
+          "Ambiguities, vague or incomplete requirements found in the PRD",
+        items: {
+          type: "object",
+          properties: {
+            source: {
+              type: "string",
+              description: "Quote or reference to the unclear text from the PRD",
+              minLength: 1,
+            },
+            issue: {
+              type: "string",
+              description: "What is unclear or missing",
+              minLength: 1,
+            },
+            question: {
+              type: "string",
+              description: "A specific clarifying question the PM should answer",
+              minLength: 1,
+            },
+            affected_ticket_ids: {
+              type: "array",
+              description:
+                "Ticket IDs (EPIC/STORY/TASK) whose scope depends on the answer",
+              items: { type: "string" },
+            },
+            severity: {
+              type: "string",
+              description:
+                "blocking = could change ticket structure/scope, minor = only affects details",
+              enum: ["blocking", "minor"],
+            },
+          },
+          required: [
+            "source",
+            "issue",
+            "question",
+            "affected_ticket_ids",
+            "severity",
+          ],
+        },
       },
     },
     required: ["epics"],

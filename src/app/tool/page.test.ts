@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { appReducer } from "./page";
-import type { Epic, Dependency, Phase, ApiMetadata } from "@/types";
+import type { Epic, Ambiguity, Dependency, Phase, ApiMetadata } from "@/types";
 
 // -- Test fixtures --
 
@@ -51,6 +51,16 @@ const mockEpics: Epic[] = [
   },
 ];
 
+const mockAmbiguities: Ambiguity[] = [
+  {
+    source: "The system should handle authentication",
+    issue: "Authentication method not specified",
+    question: "Should the system use OAuth, JWT, or session-based auth?",
+    affected_ticket_ids: ["STORY-001"],
+    severity: "blocking",
+  },
+];
+
 const mockDependencies: Dependency[] = [
   { from_id: "STORY-002", to_id: "STORY-001", type: "blocks" },
 ];
@@ -63,6 +73,7 @@ function completeState() {
   return {
     step: "complete" as const,
     epics: structuredClone(mockEpics),
+    ambiguities: mockAmbiguities,
     dependencies: mockDependencies,
     phases: mockPhases,
     hasCycles: false,

@@ -9,11 +9,12 @@ import { TicketTree } from "@/components/features/tickets/ticket-tree";
 import { DependencyGraph } from "@/components/features/graph/dependency-graph";
 import { PhaseTimeline } from "@/components/features/graph/phase-timeline";
 import { ExportButton } from "@/components/features/export/export-button";
+import { AmbiguitiesPanel } from "@/components/features/ambiguities/ambiguities-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { parseMarkdown } from "@/lib/markdown";
 import { API_KEY_HEADER } from "@/lib/constants";
-import type { Epic, Story, Task, Dependency, Phase, Section, ApiMetadata } from "@/types";
+import type { Epic, Story, Task, Dependency, Phase, Section, Ambiguity, ApiMetadata } from "@/types";
 
 // -- State machine --
 
@@ -25,11 +26,13 @@ type AppState =
       step: "mapping";
       document: string;
       epics: Epic[];
+      ambiguities: Ambiguity[];
       decomposeMetadata: ApiMetadata;
     }
   | {
       step: "complete";
       epics: Epic[];
+      ambiguities: Ambiguity[];
       dependencies: Dependency[];
       phases: Phase[];
       hasCycles: boolean;
@@ -42,7 +45,7 @@ type AppState =
 type AppAction =
   | { type: "PREVIEW"; document: string; sections: Section[] }
   | { type: "START_DECOMPOSE" }
-  | { type: "DECOMPOSE_SUCCESS"; epics: Epic[]; metadata: ApiMetadata }
+  | { type: "DECOMPOSE_SUCCESS"; epics: Epic[]; ambiguities: Ambiguity[]; metadata: ApiMetadata }
   | {
       type: "MAPPING_SUCCESS";
       dependencies: Dependency[];
@@ -89,6 +92,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         step: "mapping",
         document: state.document,
         epics: action.epics,
+        ambiguities: action.ambiguities,
         decomposeMetadata: action.metadata,
       };
     case "MAPPING_SUCCESS":
@@ -96,6 +100,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         step: "complete",
         epics: state.epics,
+        ambiguities: state.ambiguities,
         dependencies: action.dependencies,
         phases: action.phases,
         hasCycles: action.hasCycles,
@@ -167,7 +172,7 @@ async function callDecompose(
   apiKey: string,
   document: string,
   sections: Section[],
-): Promise<{ epics: Epic[]; metadata: ApiMetadata }> {
+): Promise<{ epics: Epic[]; ambiguities: Ambiguity[]; metadata: ApiMetadata }> {
   const res = await fetch("/api/decompose", {
     method: "POST",
     headers: {
@@ -248,6 +253,7 @@ export default function Home() {
           dispatch({
             type: "DECOMPOSE_SUCCESS",
             epics: result.epics,
+            ambiguities: result.ambiguities,
             metadata: result.metadata,
           });
         }
@@ -320,6 +326,7 @@ export default function Home() {
         {state.step === "complete" && (
           <CompleteView
             epics={state.epics}
+            ambiguities={state.ambiguities}
             dependencies={state.dependencies}
             phases={state.phases}
             hasCycles={state.hasCycles}
@@ -359,6 +366,7 @@ function IdleView({ onSubmit }: { onSubmit: (text: string) => void }) {
 
 function CompleteView({
   epics,
+  ambiguities,
   dependencies,
   phases,
   hasCycles,
@@ -369,6 +377,7 @@ function CompleteView({
   dispatch,
 }: {
   epics: Epic[];
+  ambiguities: Ambiguity[];
   dependencies: Dependency[];
   phases: Phase[];
   hasCycles: boolean;
@@ -435,6 +444,7 @@ function CompleteView({
           </Button>
           <ExportButton
             epics={epics}
+            ambiguities={ambiguities}
             dependencies={dependencies}
             phases={phases}
             decomposeMetadata={decomposeMetadata}
@@ -452,6 +462,12 @@ function CompleteView({
               {detail}
             </p>
           ))}
+        </div>
+      )}
+
+      {ambiguities.length > 0 && (
+        <div className="mb-6">
+          <AmbiguitiesPanel ambiguities={ambiguities} />
         </div>
       )}
 

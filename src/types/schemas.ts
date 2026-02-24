@@ -57,10 +57,25 @@ export const EpicSchema = z.object({
 });
 export type Epic = z.infer<typeof EpicSchema>;
 
+// -- Ambiguity detection --
+
+export const AmbiguitySeverity = z.enum(["blocking", "minor"]);
+export type AmbiguitySeverity = z.infer<typeof AmbiguitySeverity>;
+
+export const AmbiguitySchema = z.object({
+  source: z.string().min(1),
+  issue: z.string().min(1),
+  question: z.string().min(1),
+  affected_ticket_ids: z.array(z.string()),
+  severity: AmbiguitySeverity,
+});
+export type Ambiguity = z.infer<typeof AmbiguitySchema>;
+
 // -- LLM Call 1 output --
 
 export const DecompositionResultSchema = z.object({
   epics: z.array(EpicSchema),
+  ambiguities: z.array(AmbiguitySchema).optional().default([]),
 });
 export type DecompositionResult = z.infer<typeof DecompositionResultSchema>;
 
@@ -115,6 +130,7 @@ export const FullExportSchema = z.object({
   generated_at: z.string(),
   document_title: z.string(),
   epics: z.array(EpicSchema),
+  ambiguities: z.array(AmbiguitySchema).optional().default([]),
   dependencies: z.array(DependencySchema),
   phases: z.array(PhaseSchema),
   metadata: ExportMetadataSchema,

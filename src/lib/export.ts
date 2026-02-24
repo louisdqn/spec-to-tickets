@@ -1,9 +1,10 @@
-import type { Epic, Dependency, Phase, ApiMetadata } from "@/types";
+import type { Epic, Ambiguity, Dependency, Phase, ApiMetadata } from "@/types";
 import type { FullExport } from "@/types";
 
 interface ExportParams {
   documentTitle: string;
   epics: Epic[];
+  ambiguities?: Ambiguity[];
   dependencies: Dependency[];
   phases: Phase[];
   decomposeMetadata: ApiMetadata;
@@ -19,7 +20,7 @@ interface ExportParams {
  * @returns Full export object ready for JSON serialization
  */
 export function buildExport(params: ExportParams): FullExport {
-  const { documentTitle, epics, dependencies, phases, decomposeMetadata, dependenciesMetadata } =
+  const { documentTitle, epics, ambiguities = [], dependencies, phases, decomposeMetadata, dependenciesMetadata } =
     params;
 
   // Add parent references to the export (modifying copies, not originals)
@@ -52,6 +53,7 @@ export function buildExport(params: ExportParams): FullExport {
     generated_at: new Date().toISOString(),
     document_title: documentTitle,
     epics: epicsWithRefs,
+    ambiguities,
     dependencies,
     phases,
     metadata: {

@@ -4,6 +4,7 @@ import {
   TaskSchema,
   StorySchema,
   EpicSchema,
+  AmbiguitySchema,
   DecompositionResultSchema,
   DependencySchema,
   DependencyResultSchema,
@@ -152,6 +153,41 @@ describe("EpicSchema", () => {
   });
 });
 
+describe("AmbiguitySchema", () => {
+  const validAmbiguity = {
+    source: "The system should handle authentication",
+    issue: "Authentication method not specified",
+    question: "Should the system use OAuth, JWT, or session-based auth?",
+    affected_ticket_ids: ["STORY-001", "TASK-002"],
+    severity: "blocking" as const,
+  };
+
+  it("accepts valid blocking ambiguity", () => {
+    const result = AmbiguitySchema.safeParse(validAmbiguity);
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts valid minor ambiguity", () => {
+    const result = AmbiguitySchema.safeParse({ ...validAmbiguity, severity: "minor" });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects invalid severity", () => {
+    const result = AmbiguitySchema.safeParse({ ...validAmbiguity, severity: "critical" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects empty source", () => {
+    const result = AmbiguitySchema.safeParse({ ...validAmbiguity, source: "" });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts empty affected_ticket_ids array", () => {
+    const result = AmbiguitySchema.safeParse({ ...validAmbiguity, affected_ticket_ids: [] });
+    expect(result.success).toBe(true);
+  });
+});
+
 describe("DecompositionResultSchema", () => {
   it("accepts valid decomposition with nested structure", () => {
     const result = DecompositionResultSchema.safeParse({
@@ -185,6 +221,78 @@ describe("DecompositionResultSchema", () => {
     // Empty array is technically valid per schema (no minItems on epics array)
     const result = DecompositionResultSchema.safeParse({ epics: [] });
     expect(result.success).toBe(true);
+  });
+
+  it("defaults ambiguities to empty array when absent", () => {
+    const result = DecompositionResultSchema.safeParse({
+      epics: [
+        {
+          id: "EPIC-001",
+          title: "Authentication System",
+          description: "Handle user auth",
+          stories: [
+            {
+              id: "STORY-001",
+              title: "Login with email and password",
+              acceptance_criteria: [
+                { given: "valid user", when: "login", then: "success" },
+                { given: "invalid user", when: "login", then: "error" },
+              ],
+              estimate: "M",
+              labels: ["frontend"],
+              tasks: [
+                { id: "TASK-001", title: "Build login form", description: "Form component", estimate: "S" },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.ambiguities).toEqual([]);
+    }
+  });
+
+  it("accepts decomposition with ambiguities", () => {
+    const result = DecompositionResultSchema.safeParse({
+      epics: [
+        {
+          id: "EPIC-001",
+          title: "Authentication System",
+          description: "Handle user auth",
+          stories: [
+            {
+              id: "STORY-001",
+              title: "Login with email and password",
+              acceptance_criteria: [
+                { given: "valid user", when: "login", then: "success" },
+                { given: "invalid user", when: "login", then: "error" },
+              ],
+              estimate: "M",
+              labels: ["frontend"],
+              tasks: [
+                { id: "TASK-001", title: "Build login form", description: "Form component", estimate: "S" },
+              ],
+            },
+          ],
+        },
+      ],
+      ambiguities: [
+        {
+          source: "The system should handle auth",
+          issue: "Auth method not specified",
+          question: "OAuth or JWT?",
+          affected_ticket_ids: ["STORY-001"],
+          severity: "blocking",
+        },
+      ],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.ambiguities).toHaveLength(1);
+      expect(result.data.ambiguities[0].severity).toBe("blocking");
+    }
   });
 });
 
