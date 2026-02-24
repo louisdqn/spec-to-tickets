@@ -6,17 +6,58 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileDropzone } from "./file-dropzone";
 import { MAX_DOCUMENT_LENGTH } from "@/lib/constants";
+import type { Section } from "@/types";
 
 interface DocumentInputProps {
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string, sections?: Section[]) => void;
 }
 
 export function DocumentInput({ onSubmit }: DocumentInputProps) {
   const [text, setText] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
 
   const handleFileRead = useCallback((content: string) => {
     setText(content);
+    setPdfError(null);
   }, []);
+
+  const handlePdfFile = useCallback(
+    async (file: File) => {
+      setIsParsing(true);
+      setPdfError(null);
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const res = await fetch("/api/parse-pdf", {
+          method: "POST",
+          body: formData,
+        });
+
+        const json = await res.json();
+        if (!res.ok) {
+          setPdfError(json.error ?? "Failed to parse PDF");
+          setIsParsing(false);
+          return;
+        }
+
+        const { text: extractedText, sections } = json.data as {
+          text: string;
+          sections: Section[];
+        };
+
+        setText(extractedText);
+        onSubmit(extractedText, sections);
+      } catch {
+        setPdfError("Failed to upload PDF. Please try again.");
+      } finally {
+        setIsParsing(false);
+      }
+    },
+    [onSubmit],
+  );
 
   const handleSubmit = useCallback(() => {
     if (text.trim()) onSubmit(text.trim());
@@ -29,7 +70,17 @@ export function DocumentInput({ onSubmit }: DocumentInputProps) {
   return (
     <Card>
       <CardContent className="space-y-4 pt-6">
-        <FileDropzone onFileRead={handleFileRead} />
+        <FileDropzone onFileRead={handleFileRead} onPdfFile={handlePdfFile} />
+
+        {isParsing && (
+          <p className="text-center text-sm text-muted-foreground">
+            Extracting text from PDF...
+          </p>
+        )}
+
+        {pdfError && (
+          <p className="text-center text-sm text-destructive">{pdfError}</p>
+        )}
 
         <div className="relative">
           <Textarea
@@ -54,7 +105,7 @@ export function DocumentInput({ onSubmit }: DocumentInputProps) {
             </span>
             <span className="text-xs text-muted-foreground">Cmd+Enter to submit</span>
           </div>
-          <Button onClick={handleSubmit} disabled={isEmpty || isOverLimit}>
+          <Button onClick={handleSubmit} disabled={isEmpty || isOverLimit || isParsing}>
             Parse Document
           </Button>
         </div>

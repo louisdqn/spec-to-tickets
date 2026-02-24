@@ -224,8 +224,8 @@ export default function Home() {
     apiKeyRef.current = key;
   }, []);
 
-  const handleDocumentSubmit = useCallback((text: string) => {
-    const sections = parseMarkdown(text);
+  const handleDocumentSubmit = useCallback((text: string, precomputedSections?: Section[]) => {
+    const sections = precomputedSections ?? parseMarkdown(text);
     dispatch({ type: "PREVIEW", document: text, sections });
   }, []);
 

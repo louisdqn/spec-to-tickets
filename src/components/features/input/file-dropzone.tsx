@@ -4,18 +4,39 @@ import { useState, useCallback, useRef } from "react";
 
 interface FileDropzoneProps {
   onFileRead: (content: string) => void;
+  onPdfFile?: (file: File) => void;
 }
 
-export function FileDropzone({ onFileRead }: FileDropzoneProps) {
+const TEXT_EXTENSIONS = [".md", ".markdown", ".txt"];
+const PDF_EXTENSION = ".pdf";
+
+function isTextFile(name: string): boolean {
+  return TEXT_EXTENSIONS.some((ext) => name.toLowerCase().endsWith(ext));
+}
+
+function isPdfFile(name: string): boolean {
+  return name.toLowerCase().endsWith(PDF_EXTENSION);
+}
+
+export function FileDropzone({ onFileRead, onPdfFile }: FileDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const readFile = useCallback(
     (file: File) => {
-      if (!file.name.endsWith(".md") && !file.name.endsWith(".markdown") && !file.name.endsWith(".txt")) {
+      if (isPdfFile(file.name)) {
+        if (onPdfFile) {
+          setFileName(file.name);
+          onPdfFile(file);
+        }
         return;
       }
+
+      if (!isTextFile(file.name)) {
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target?.result as string;
@@ -26,7 +47,7 @@ export function FileDropzone({ onFileRead }: FileDropzoneProps) {
       };
       reader.readAsText(file);
     },
-    [onFileRead],
+    [onFileRead, onPdfFile],
   );
 
   const handleDrop = useCallback(
@@ -81,7 +102,7 @@ export function FileDropzone({ onFileRead }: FileDropzoneProps) {
       <input
         ref={inputRef}
         type="file"
-        accept=".md,.markdown,.txt"
+        accept=".md,.markdown,.txt,.pdf"
         className="hidden"
         onChange={handleChange}
       />
@@ -92,7 +113,7 @@ export function FileDropzone({ onFileRead }: FileDropzoneProps) {
         </p>
       ) : (
         <p className="text-sm text-muted-foreground">
-          Drop a .md file here or click to browse
+          Drop a .md or .pdf file here or click to browse
         </p>
       )}
     </div>
