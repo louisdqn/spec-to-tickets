@@ -1,4 +1,4 @@
-import type { Epic, Ambiguity, Dependency, Phase, ApiMetadata } from "@/types";
+import type { Epic, Ambiguity, Dependency, Phase, ApiMetadata, AcceptanceCriterion } from "@/types";
 import type { FullExport } from "@/types";
 
 interface ExportParams {
@@ -79,6 +79,127 @@ export function downloadJson(data: unknown, filename: string): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
   });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// -- CSV export --
+
+interface CsvExportParams {
+  epics: Epic[];
+  dependencies: Dependency[];
+}
+
+interface CsvRow {
+  type: "epic" | "story" | "task";
+  id: string;
+  title: string;
+  parent_id: string;
+  description: string;
+  acceptance_criteria: string;
+  estimate: string;
+  labels: string;
+  dependencies: string;
+}
+
+const CSV_HEADERS: (keyof CsvRow)[] = [
+  "type",
+  "id",
+  "title",
+  "parent_id",
+  "description",
+  "acceptance_criteria",
+  "estimate",
+  "labels",
+  "dependencies",
+];
+
+function formatAC(ac: AcceptanceCriterion): string {
+  return `Given ${ac.given}, When ${ac.when}, Then ${ac.then}`;
+}
+
+export function escapeCsvField(value: string): string {
+  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+/**
+ * Build a flat CSV string from the epic hierarchy.
+ * Rows are ordered: epic, then its stories, then each story's tasks.
+ */
+export function buildCsvExport({ epics, dependencies }: CsvExportParams): string {
+  const depsById = new Map<string, string[]>();
+  for (const dep of dependencies) {
+    if (dep.type === "blocks") {
+      const existing = depsById.get(dep.to_id) ?? [];
+      existing.push(dep.from_id);
+      depsById.set(dep.to_id, existing);
+    }
+  }
+
+  const rows: CsvRow[] = [];
+
+  for (const epic of epics) {
+    rows.push({
+      type: "epic",
+      id: epic.id,
+      title: epic.title,
+      parent_id: "",
+      description: epic.description,
+      acceptance_criteria: "",
+      estimate: "",
+      labels: "",
+      dependencies: (depsById.get(epic.id) ?? []).join(","),
+    });
+
+    for (const story of epic.stories) {
+      rows.push({
+        type: "story",
+        id: story.id,
+        title: story.title,
+        parent_id: epic.id,
+        description: "",
+        acceptance_criteria: story.acceptance_criteria.map(formatAC).join(" | "),
+        estimate: story.estimate,
+        labels: story.labels.join(","),
+        dependencies: (depsById.get(story.id) ?? []).join(","),
+      });
+
+      for (const task of story.tasks) {
+        rows.push({
+          type: "task",
+          id: task.id,
+          title: task.title,
+          parent_id: story.id,
+          description: "",
+          acceptance_criteria: "",
+          estimate: task.estimate,
+          labels: task.labels.join(","),
+          dependencies: (depsById.get(task.id) ?? []).join(","),
+        });
+      }
+    }
+  }
+
+  const header = CSV_HEADERS.join(",");
+  const body = rows
+    .map((row) => CSV_HEADERS.map((col) => escapeCsvField(row[col])).join(","))
+    .join("\n");
+
+  return `${header}\n${body}`;
+}
+
+/**
+ * Trigger a CSV file download in the browser.
+ */
+export function downloadCsv(csv: string, filename: string): void {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

@@ -2,7 +2,7 @@
 
 import { useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { buildExport, downloadJson } from "@/lib/export";
+import { buildExport, downloadJson, buildCsvExport, downloadCsv } from "@/lib/export";
 import type { Epic, Ambiguity, Dependency, Phase, ApiMetadata } from "@/types";
 
 interface ExportButtonProps {
@@ -24,7 +24,7 @@ export function ExportButton({
   dependenciesMetadata,
   documentTitle = "Untitled PRD",
 }: ExportButtonProps) {
-  const handleExport = useCallback(() => {
+  const handleExportJson = useCallback(() => {
     const data = buildExport({
       documentTitle,
       epics,
@@ -39,9 +39,19 @@ export function ExportButton({
     downloadJson(data, filename);
   }, [epics, ambiguities, dependencies, phases, decomposeMetadata, dependenciesMetadata, documentTitle]);
 
+  const handleExportCsv = useCallback(() => {
+    const csv = buildCsvExport({ epics, dependencies });
+    downloadCsv(csv, "spec-to-tickets-export.csv");
+  }, [epics, dependencies]);
+
   return (
-    <Button variant="outline" onClick={handleExport}>
-      Export JSON
-    </Button>
+    <div className="flex gap-2">
+      <Button variant="outline" onClick={handleExportJson}>
+        Export JSON
+      </Button>
+      <Button variant="outline" onClick={handleExportCsv}>
+        Export CSV
+      </Button>
+    </div>
   );
 }
