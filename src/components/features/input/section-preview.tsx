@@ -23,12 +23,12 @@ export function SectionPreview({ sections, onConfirm, onBack, isLoading }: Secti
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="max-h-[400px] space-y-1.5 overflow-y-auto">
+        <div className="max-h-[50vh] space-y-1.5 overflow-y-auto sm:max-h-[400px]">
           {sections.map((section, i) => (
             <div
               key={i}
-              className="rounded border border-border px-3 py-2"
-              style={{ marginLeft: `${(section.level - 1) * 16}px` }}
+              className="rounded border border-border px-2.5 py-2 sm:px-3"
+              style={{ marginLeft: `${(section.level - 1) * 8}px` }}
             >
               <div className="flex items-center gap-2">
                 <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">

@@ -40,8 +40,8 @@ export function ApiKeyInput({
   }, [onKeyChange]);
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="relative">
+    <div className="flex w-full items-center gap-2 sm:w-auto">
+      <div className="relative min-w-0 flex-1 sm:flex-initial">
         <Input
           type={isVisible ? "text" : "password"}
           placeholder="sk-ant-..."
@@ -53,12 +53,12 @@ export function ApiKeyInput({
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSave();
           }}
-          className="w-56 pr-16 font-mono text-xs"
+          className="w-full pr-16 font-mono text-xs sm:w-56"
         />
         <button
           type="button"
           onClick={() => setIsVisible(!isVisible)}
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-xs text-muted-foreground hover:text-foreground"
         >
           {isVisible ? "Hide" : "Show"}
         </button>

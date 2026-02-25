@@ -308,7 +308,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <Header onApiKeyChange={handleApiKeyChange} />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-3 py-4 sm:px-4 sm:py-8">
         {state.step === "idle" && <IdleView onSubmit={handleDocumentSubmit} />}
 
         {state.step === "previewing" && (
@@ -352,8 +352,8 @@ export default function Home() {
 function IdleView({ onSubmit }: { onSubmit: (text: string) => void }) {
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-8 text-center">
-        <h2 className="text-2xl font-semibold tracking-tight">
+      <div className="mb-6 text-center sm:mb-8">
+        <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
           Transform your PRD into engineering tickets
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -449,17 +449,17 @@ function CompleteView({
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Results</h2>
-          <p className="text-sm text-muted-foreground">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold sm:text-xl">Results</h2>
+          <p className="text-xs text-muted-foreground sm:text-sm">
             {epics.length} epics, {totalStories} stories, {totalTasks} tasks,{" "}
             {dependencies.filter((d) => d.type === "blocks").length} dependencies, {phases.length}{" "}
             phases &middot; ${totalCost.toFixed(3)}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" onClick={onReset}>
+        <div className="flex shrink-0 gap-2">
+          <Button variant="ghost" size="sm" onClick={onReset}>
             New Document
           </Button>
           <ExportButton
@@ -491,16 +491,16 @@ function CompleteView({
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
         <div>
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader className="px-3 pb-3 sm:px-6">
               <div className="flex items-center justify-between">
-                <CardTitle>Ticket Hierarchy</CardTitle>
+                <CardTitle className="text-base sm:text-lg">Ticket Hierarchy</CardTitle>
               </div>
               <LabelFilter selected={selectedLabels} onChange={setSelectedLabels} />
             </CardHeader>
-            <CardContent className="max-h-[600px] overflow-y-auto">
+            <CardContent className="max-h-[50vh] overflow-y-auto px-3 sm:max-h-[600px] sm:px-6">
               <TicketTree
                 epics={filteredEpics}
                 onUpdateEpic={handleUpdateEpic}
@@ -512,10 +512,10 @@ function CompleteView({
         </div>
         <div>
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle>Dependency Graph</CardTitle>
+            <CardHeader className="px-3 pb-3 sm:px-6">
+              <CardTitle className="text-base sm:text-lg">Dependency Graph</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-x-auto px-3 sm:px-6">
               <DependencyGraph epics={epics} dependencies={dependencies} />
             </CardContent>
           </Card>

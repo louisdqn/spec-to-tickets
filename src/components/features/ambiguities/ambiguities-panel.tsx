@@ -26,19 +26,19 @@ export function AmbiguitiesPanel({ ambiguities }: AmbiguitiesPanelProps) {
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 <ChevronRight
                   className={`h-4 w-4 shrink-0 text-amber-600 transition-transform ${isOpen ? "rotate-90" : ""}`}
                 />
-                <CardTitle className="text-base text-amber-900">
-                  Ambiguities & Clarifying Questions
+                <CardTitle className="text-sm text-amber-900 sm:text-base">
+                  Ambiguities & Questions
                 </CardTitle>
                 <Badge variant="outline" className="border-amber-300 text-amber-700">
                   {ambiguities.length}
                 </Badge>
               </div>
-              <div className="flex gap-1.5">
+              <div className="flex gap-1.5 pl-6 sm:pl-0">
                 {blockingCount > 0 && (
                   <Badge variant="destructive" className="text-xs">
                     {blockingCount} blocking
@@ -58,7 +58,7 @@ export function AmbiguitiesPanel({ ambiguities }: AmbiguitiesPanelProps) {
             {ambiguities.map((ambiguity, i) => (
               <div
                 key={i}
-                className="rounded-lg border border-amber-200 bg-white p-4"
+                className="rounded-lg border border-amber-200 bg-white p-3 sm:p-4"
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-medium text-slate-900">

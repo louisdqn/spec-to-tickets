@@ -45,11 +45,11 @@ export function ExportButton({
   }, [epics, dependencies]);
 
   return (
-    <div className="flex gap-2">
-      <Button variant="outline" onClick={handleExportJson}>
+    <div className="flex flex-col gap-2 sm:flex-row">
+      <Button variant="outline" size="sm" onClick={handleExportJson}>
         Export JSON
       </Button>
-      <Button variant="outline" onClick={handleExportCsv}>
+      <Button variant="outline" size="sm" onClick={handleExportCsv}>
         Export CSV
       </Button>
     </div>

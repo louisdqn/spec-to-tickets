@@ -89,7 +89,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
   if (isEditing) {
     return (
       <div className="rounded-lg border border-border bg-card">
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           <div className="space-y-3">
             {/* Header with ID and Save/Cancel */}
             <div className="flex items-center justify-between">
@@ -97,10 +97,10 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
                 {story.id}
               </span>
               <div className="flex gap-1">
-                <Button variant="ghost" size="xs" onClick={handleCancel}>
+                <Button variant="ghost" size="sm" onClick={handleCancel}>
                   Cancel
                 </Button>
-                <Button size="xs" onClick={handleSave} disabled={!isValid}>
+                <Button size="sm" onClick={handleSave} disabled={!isValid}>
                   Save
                 </Button>
               </div>
@@ -124,7 +124,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
               <select
                 value={draftEstimate}
                 onChange={(e) => setDraftEstimate(e.target.value as Story["estimate"])}
-                className="h-7 rounded border border-border bg-background px-2 text-xs"
+                className="h-9 rounded border border-border bg-background px-2 text-xs sm:h-7"
               >
                 {T_SHIRT_SIZES.map((size) => (
                   <option key={size} value={size}>
@@ -182,7 +182,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
                         <Input
                           value={ac.given}
                           onChange={(e) => updateAC(i, "given", e.target.value)}
-                          className="h-6 text-xs"
+                          className="h-9 text-xs sm:h-6"
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -192,7 +192,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
                         <Input
                           value={ac.when}
                           onChange={(e) => updateAC(i, "when", e.target.value)}
-                          className="h-6 text-xs"
+                          className="h-9 text-xs sm:h-6"
                         />
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -202,7 +202,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
                         <Input
                           value={ac.then}
                           onChange={(e) => updateAC(i, "then", e.target.value)}
-                          className="h-6 text-xs"
+                          className="h-9 text-xs sm:h-6"
                         />
                       </div>
                     </div>
@@ -212,7 +212,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
                         size="xs"
                         onClick={() => removeAC(i)}
                         disabled={draftAC.length <= 2}
-                        className="h-5 text-[10px] text-destructive hover:text-destructive"
+                        className="min-h-[44px] text-xs text-destructive hover:text-destructive sm:min-h-0 sm:h-5 sm:text-[10px]"
                       >
                         Remove
                       </Button>
@@ -226,7 +226,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
 
         {/* Tasks (read-only section, still shown while editing story) */}
         {story.tasks.length > 0 && (
-          <div className="border-t border-border px-4 pb-4 pt-3">
+          <div className="border-t border-border px-3 pb-3 pt-2.5 sm:px-4 sm:pb-4 sm:pt-3">
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Tasks ({story.tasks.length})
             </p>
@@ -253,7 +253,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="flex w-full items-start justify-between gap-3 p-4 text-left hover:bg-muted/50"
+            className="flex w-full items-start justify-between gap-2 p-3 text-left hover:bg-muted/50 sm:gap-3 sm:p-4"
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
@@ -277,7 +277,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
                   variant="ghost"
                   size="xs"
                   onClick={handleEdit}
-                  className="text-xs"
+                  className="min-h-[44px] min-w-[44px] text-xs"
                 >
                   Edit
                 </Button>
@@ -290,7 +290,7 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="border-t border-border px-4 pb-4 pt-3">
+          <div className="border-t border-border px-3 pb-3 pt-2.5 sm:px-4 sm:pb-4 sm:pt-3">
             {/* Acceptance Criteria */}
             <div className="mb-4">
               <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">

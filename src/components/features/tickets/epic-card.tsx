@@ -67,19 +67,19 @@ export function EpicCard({ epic, onUpdateEpic, onUpdateStory, onUpdateTask }: Ep
   if (isEditing) {
     return (
       <div className="rounded-lg border border-border">
-        <div className="p-4">
+        <div className="p-3 sm:p-4">
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                 <span className="shrink-0 font-mono text-xs text-primary">{epic.id}</span>
                 <Badge variant="secondary">{storyCount} stories</Badge>
                 <Badge variant="outline">{taskCount} tasks</Badge>
               </div>
               <div className="flex gap-1">
-                <Button variant="ghost" size="xs" onClick={handleCancel}>
+                <Button variant="ghost" size="sm" onClick={handleCancel}>
                   Cancel
                 </Button>
-                <Button size="xs" onClick={handleSave} disabled={!isValid}>
+                <Button size="sm" onClick={handleSave} disabled={!isValid}>
                   Save
                 </Button>
               </div>
@@ -105,7 +105,7 @@ export function EpicCard({ epic, onUpdateEpic, onUpdateStory, onUpdateTask }: Ep
 
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <CollapsibleContent>
-            <div className="space-y-3 border-t border-border p-4">
+            <div className="space-y-3 border-t border-border p-3 sm:p-4">
               {epic.stories.map((story) => (
                 <StoryCard
                   key={story.id}
@@ -128,7 +128,7 @@ export function EpicCard({ epic, onUpdateEpic, onUpdateStory, onUpdateTask }: Ep
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="flex w-full items-start justify-between gap-3 p-4 text-left hover:bg-muted/50"
+            className="flex w-full items-start justify-between gap-2 p-3 text-left hover:bg-muted/50 sm:gap-3 sm:p-4"
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
@@ -137,18 +137,18 @@ export function EpicCard({ epic, onUpdateEpic, onUpdateStory, onUpdateTask }: Ep
                   {isOpen ? "\u25BC" : "\u25B6"}
                 </span>
               </div>
-              <p className="mt-1 text-base font-semibold">{epic.title}</p>
+              <p className="mt-1 text-sm font-semibold sm:text-base">{epic.title}</p>
               {epic.description && (
-                <p className="mt-1 text-sm text-muted-foreground">{epic.description}</p>
+                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{epic.description}</p>
               )}
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-1 sm:gap-2">
               {onUpdateEpic && (
                 <Button
                   variant="ghost"
                   size="xs"
                   onClick={handleEdit}
-                  className="text-xs"
+                  className="min-h-[44px] min-w-[44px] text-xs"
                 >
                   Edit
                 </Button>
@@ -160,7 +160,7 @@ export function EpicCard({ epic, onUpdateEpic, onUpdateStory, onUpdateTask }: Ep
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="space-y-3 border-t border-border p-4">
+          <div className="space-y-3 border-t border-border p-3 sm:p-4">
             {epic.stories.map((story) => (
               <StoryCard
                 key={story.id}

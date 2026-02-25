@@ -59,7 +59,7 @@ export function TaskCard({ task, epicId, storyId, onUpdateTask }: TaskCardProps)
 
   if (isEditing) {
     return (
-      <div className="rounded border border-border bg-background p-3">
+      <div className="rounded border border-border bg-background p-2.5 sm:p-3">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
@@ -69,7 +69,7 @@ export function TaskCard({ task, epicId, storyId, onUpdateTask }: TaskCardProps)
               value={draftTitle}
               onChange={(e) => setDraftTitle(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="h-7 text-sm"
+              className="h-9 text-sm sm:h-7"
               autoFocus
             />
           </div>
@@ -77,7 +77,7 @@ export function TaskCard({ task, epicId, storyId, onUpdateTask }: TaskCardProps)
             <select
               value={draftEstimate}
               onChange={(e) => setDraftEstimate(e.target.value as Task["estimate"])}
-              className="h-7 rounded border border-border bg-background px-2 text-xs"
+              className="h-9 rounded border border-border bg-background px-2 text-xs sm:h-7"
             >
               {TASK_SIZES.map((size) => (
                 <option key={size} value={size}>
@@ -86,10 +86,10 @@ export function TaskCard({ task, epicId, storyId, onUpdateTask }: TaskCardProps)
               ))}
             </select>
             <div className="flex gap-1">
-              <Button variant="ghost" size="xs" onClick={handleCancel}>
+              <Button variant="ghost" size="sm" onClick={handleCancel}>
                 Cancel
               </Button>
-              <Button size="xs" onClick={handleSave} disabled={!isValid}>
+              <Button size="sm" onClick={handleSave} disabled={!isValid}>
                 Save
               </Button>
             </div>
@@ -100,14 +100,14 @@ export function TaskCard({ task, epicId, storyId, onUpdateTask }: TaskCardProps)
   }
 
   return (
-    <div className="rounded border border-border bg-background p-3">
+    <div className="rounded border border-border bg-background p-2.5 sm:p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 shrink-0 font-mono text-[10px] text-muted-foreground">
               {task.id}
             </span>
-            <p className="truncate text-sm">{task.title}</p>
+            <p className="text-sm">{task.title}</p>
           </div>
           {task.description && (
             <p className="mt-1 text-xs text-muted-foreground">{task.description}</p>
@@ -129,7 +129,7 @@ export function TaskCard({ task, epicId, storyId, onUpdateTask }: TaskCardProps)
               variant="ghost"
               size="xs"
               onClick={handleEdit}
-              className="h-5 px-1 text-[10px]"
+              className="min-h-[44px] min-w-[44px] text-[10px]"
             >
               Edit
             </Button>

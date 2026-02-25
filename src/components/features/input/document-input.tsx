@@ -85,7 +85,7 @@ export function DocumentInput({ onSubmit }: DocumentInputProps) {
         <div className="relative">
           <Textarea
             placeholder="Or paste your PRD here (Markdown format)..."
-            className="min-h-[300px] font-mono text-sm"
+            className="min-h-[200px] font-mono text-sm sm:min-h-[300px]"
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
@@ -96,16 +96,16 @@ export function DocumentInput({ onSubmit }: DocumentInputProps) {
           />
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <span
               className={`text-xs ${isOverLimit ? "text-destructive font-medium" : "text-muted-foreground"}`}
             >
               {charCount.toLocaleString()} / {MAX_DOCUMENT_LENGTH.toLocaleString()} chars
             </span>
-            <span className="text-xs text-muted-foreground">Cmd+Enter to submit</span>
+            <span className="hidden text-xs text-muted-foreground sm:inline">Cmd+Enter to submit</span>
           </div>
-          <Button onClick={handleSubmit} disabled={isEmpty || isOverLimit || isParsing}>
+          <Button className="w-full sm:w-auto" onClick={handleSubmit} disabled={isEmpty || isOverLimit || isParsing}>
             Parse Document
           </Button>
         </div>

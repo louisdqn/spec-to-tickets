@@ -11,11 +11,11 @@ export function PhaseTimeline({ phases }: PhaseTimelineProps) {
   if (phases.length === 0) return null;
 
   return (
-    <div className="rounded-lg border border-border p-4">
+    <div className="rounded-lg border border-border p-3 sm:p-4">
       <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
         Execution Phases
       </p>
-      <div className="flex gap-2 overflow-x-auto">
+      <div className="flex gap-2 overflow-x-auto pb-1">
         {phases.map((phase, i) => (
           <div key={phase.phase_number} className="flex items-center gap-2">
             <div className="shrink-0 rounded-lg border border-border bg-card p-3">

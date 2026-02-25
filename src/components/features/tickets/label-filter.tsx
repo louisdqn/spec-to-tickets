@@ -20,8 +20,8 @@ export function LabelFilter({ selected, onChange }: LabelFilterProps) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      <span className="mr-1 text-xs text-muted-foreground">Filter:</span>
+    <div className="flex items-center gap-1.5 overflow-x-auto sm:flex-wrap">
+      <span className="mr-1 shrink-0 text-xs text-muted-foreground">Filter:</span>
       {ALL_LABELS.map((label) => {
         const isActive = selected.includes(label);
         return (
@@ -29,7 +29,7 @@ export function LabelFilter({ selected, onChange }: LabelFilterProps) {
             key={label}
             type="button"
             onClick={() => toggle(label)}
-            className="cursor-pointer"
+            className="min-h-[44px] shrink-0 cursor-pointer px-0.5"
           >
             <Badge
               variant="outline"
