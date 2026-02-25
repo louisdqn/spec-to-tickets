@@ -182,15 +182,23 @@ async function callDecompose(
   sections: Section[],
   signal?: AbortSignal,
 ): Promise<{ epics: Epic[]; ambiguities: Ambiguity[]; metadata: ApiMetadata }> {
-  const res = await fetch("/api/decompose", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      [API_KEY_HEADER]: apiKey,
-    },
-    body: JSON.stringify({ document, sections }),
-    signal,
-  });
+  let res: Response;
+  try {
+    res = await fetch("/api/decompose", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        [API_KEY_HEADER]: apiKey,
+      },
+      body: JSON.stringify({ document, sections }),
+      signal,
+    });
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new Error("Request timed out — try a shorter document or check your connection.");
+    }
+    throw err;
+  }
 
   let json: Record<string, unknown>;
   try {
@@ -228,15 +236,23 @@ async function callDependencies(
     ),
   ];
 
-  const res = await fetch("/api/dependencies", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      [API_KEY_HEADER]: apiKey,
-    },
-    body: JSON.stringify({ tickets }),
-    signal,
-  });
+  let res: Response;
+  try {
+    res = await fetch("/api/dependencies", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        [API_KEY_HEADER]: apiKey,
+      },
+      body: JSON.stringify({ tickets }),
+      signal,
+    });
+  } catch (err) {
+    if (err instanceof TypeError) {
+      throw new Error("Request timed out — try a shorter document or check your connection.");
+    }
+    throw err;
+  }
 
   let json: Record<string, unknown>;
   try {
