@@ -1,3 +1,5 @@
+export const maxDuration = 30;
+
 import { NextResponse } from "next/server";
 import { extractText } from "unpdf";
 import { parsePdfText } from "@/lib/pdf-parser";
