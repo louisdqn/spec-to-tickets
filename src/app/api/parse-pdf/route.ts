@@ -1,6 +1,5 @@
-import path from "node:path";
 import { NextResponse } from "next/server";
-import type { TextItem } from "pdfjs-dist/types/src/display/api";
+import { extractText } from "unpdf";
 import { parsePdfText } from "@/lib/pdf-parser";
 import { API_KEY_HEADER } from "@/lib/constants";
 
@@ -41,33 +40,8 @@ export async function POST(req: Request) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const data = new Uint8Array(arrayBuffer);
-
-    // Use pdfjs-dist legacy build — no DOMMatrix / canvas dependency
-    const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-
-    const doc = await pdfjsLib.getDocument({
-      data,
-      standardFontDataUrl: path.join(
-        process.cwd(),
-        "node_modules/pdfjs-dist/standard_fonts/",
-      ),
-      disableFontFace: true,
-      useSystemFonts: true,
-    }).promise;
-
-    const pages: string[] = [];
-    for (let i = 1; i <= doc.numPages; i++) {
-      const page = await doc.getPage(i);
-      const content = await page.getTextContent();
-      const text = content.items
-        .filter((item): item is TextItem => "str" in item)
-        .map((item) => item.str)
-        .join(" ");
-      pages.push(text);
-    }
-
-    const extractedText = pages.join("\n\n");
+    const { text } = await extractText(new Uint8Array(arrayBuffer));
+    const extractedText = Array.isArray(text) ? text.join("\n\n") : text;
 
     if (!extractedText || extractedText.trim().length === 0) {
       return NextResponse.json(
