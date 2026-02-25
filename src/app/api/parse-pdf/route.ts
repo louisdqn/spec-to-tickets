@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
-import { PDFParse } from "pdf-parse";
 import { parsePdfText } from "@/lib/pdf-parser";
+import { API_KEY_HEADER } from "@/lib/constants";
 
 const MAX_PDF_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export async function POST(req: Request) {
   try {
+    const apiKey = req.headers.get(API_KEY_HEADER);
+    if (!apiKey || !apiKey.startsWith("sk-")) {
+      return NextResponse.json(
+        { error: "Missing or invalid API key", code: "INVALID_API_KEY" },
+        { status: 401 },
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("file");
 
@@ -31,6 +39,7 @@ export async function POST(req: Request) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
+    const { PDFParse } = await import("pdf-parse");
     const parser = new PDFParse({ data: arrayBuffer });
     let extractedText: string;
     try {

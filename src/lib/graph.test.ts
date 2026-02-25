@@ -76,6 +76,17 @@ describe("detectCycles", () => {
     expect(result.hasCycles).toBe(false);
   });
 
+  it("detects self-loop (A -> A)", () => {
+    const deps: Dependency[] = [
+      { from_id: "S-001", to_id: "S-001", type: "blocks" },
+    ];
+    const nodes = new Set(["S-001", "S-002"]);
+
+    const result = detectCycles(deps, nodes);
+    expect(result.hasCycles).toBe(true);
+    expect(result.cycleDetails[0]).toContain("S-001");
+  });
+
   it("detects partial cycle in mixed graph", () => {
     // S-001 -> S-002 -> S-003 (linear)
     // S-004 -> S-005 -> S-004 (cycle)

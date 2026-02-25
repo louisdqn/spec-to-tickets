@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FileDropzone } from "./file-dropzone";
-import { MAX_DOCUMENT_LENGTH } from "@/lib/constants";
+import { MAX_DOCUMENT_LENGTH, API_KEY_HEADER, API_KEY_STORAGE_KEY } from "@/lib/constants";
 import type { Section } from "@/types";
 
 interface DocumentInputProps {
@@ -31,8 +31,10 @@ export function DocumentInput({ onSubmit }: DocumentInputProps) {
         const formData = new FormData();
         formData.append("file", file);
 
+        const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
         const res = await fetch("/api/parse-pdf", {
           method: "POST",
+          headers: { [API_KEY_HEADER]: apiKey },
           body: formData,
         });
 

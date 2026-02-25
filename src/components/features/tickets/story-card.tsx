@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ interface StoryCardProps {
   ) => void;
 }
 
-export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryCardProps) {
+export const StoryCard = memo(function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryCardProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(story.title);
@@ -340,4 +340,4 @@ export function StoryCard({ story, epicId, onUpdateStory, onUpdateTask }: StoryC
       </div>
     </Collapsible>
   );
-}
+});

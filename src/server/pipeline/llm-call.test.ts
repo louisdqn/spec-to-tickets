@@ -192,6 +192,46 @@ describe("callWithRetry", () => {
     expect(client.messages.create).toHaveBeenCalledTimes(3);
   });
 
+  it("wraps network errors as LLM_API_ERROR", async () => {
+    const client = {
+      messages: {
+        create: vi.fn(async () => {
+          throw new Error("fetch failed");
+        }),
+      },
+    } as unknown as LlmCallParams["client"];
+
+    await expect(callWithRetry(makeParams(client), TestSchema)).rejects.toThrow(
+      AppError,
+    );
+    await expect(callWithRetry(
+      makeParams({
+        messages: {
+          create: vi.fn(async () => { throw new Error("fetch failed"); }),
+        },
+      } as unknown as LlmCallParams["client"]),
+      TestSchema,
+    )).rejects.toMatchObject({
+      code: "LLM_API_ERROR",
+      message: expect.stringContaining("fetch failed"),
+    });
+  });
+
+  it("preserves status code from Anthropic SDK errors", async () => {
+    const sdkError = Object.assign(new Error("Invalid API key"), { status: 401 });
+    const client = {
+      messages: {
+        create: vi.fn(async () => { throw sdkError; }),
+      },
+    } as unknown as LlmCallParams["client"];
+
+    await expect(callWithRetry(makeParams(client), TestSchema)).rejects.toMatchObject({
+      code: "LLM_API_ERROR",
+      statusCode: 401,
+      message: expect.stringContaining("Invalid API key"),
+    });
+  });
+
   it("passes correct parameters to Anthropic SDK", async () => {
     const client = makeMockClient([
       makeResponse({ name: "ok", count: 1 }),

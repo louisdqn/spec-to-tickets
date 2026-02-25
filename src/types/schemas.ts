@@ -46,8 +46,8 @@ export const StorySchema = z.object({
   title: z.string().min(5).max(120),
   acceptance_criteria: z.array(AcceptanceCriterionSchema).min(2).max(5),
   estimate: TShirtSize,
-  labels: z.array(TicketLabel),
-  tasks: z.array(TaskSchema),
+  labels: z.array(TicketLabel).min(1),
+  tasks: z.array(TaskSchema).min(1),
 });
 export type Story = z.infer<typeof StorySchema>;
 
@@ -55,7 +55,7 @@ export const EpicSchema = z.object({
   id: z.string().regex(/^EPIC-\d{3}$/),
   title: z.string().min(5).max(120),
   description: z.string().max(500),
-  stories: z.array(StorySchema),
+  stories: z.array(StorySchema).min(1),
 });
 export type Epic = z.infer<typeof EpicSchema>;
 
@@ -76,7 +76,7 @@ export type Ambiguity = z.infer<typeof AmbiguitySchema>;
 // -- LLM Call 1 output --
 
 export const DecompositionResultSchema = z.object({
-  epics: z.array(EpicSchema),
+  epics: z.array(EpicSchema).min(1),
   ambiguities: z.array(AmbiguitySchema).optional().default([]),
 });
 export type DecompositionResult = z.infer<typeof DecompositionResultSchema>;

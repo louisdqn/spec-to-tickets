@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ interface EpicCardProps {
   ) => void;
 }
 
-export function EpicCard({ epic, onUpdateEpic, onUpdateStory, onUpdateTask }: EpicCardProps) {
+export const EpicCard = memo(function EpicCard({ epic, onUpdateEpic, onUpdateStory, onUpdateTask }: EpicCardProps) {
   const [isOpen, setIsOpen] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [draftTitle, setDraftTitle] = useState(epic.title);
@@ -175,4 +175,4 @@ export function EpicCard({ epic, onUpdateEpic, onUpdateStory, onUpdateTask }: Ep
       </div>
     </Collapsible>
   );
-}
+});

@@ -7,7 +7,7 @@ import {
   DEPENDENCIES_TOOL,
   buildDependenciesUserMessage,
 } from "@/server/prompts/dependencies";
-import { LLM_MAX_TOKENS_DEPENDENCIES, COST_PER_INPUT_TOKEN, COST_PER_OUTPUT_TOKEN } from "@/lib/constants";
+import { LLM_MAX_TOKENS_DEPENDENCIES, buildApiMetadata } from "@/lib/constants";
 import { detectCycles } from "@/lib/graph";
 import { logger } from "@/lib/logger";
 
@@ -62,19 +62,11 @@ export async function mapDependencies(
     });
   }
 
-  const cost =
-    result.usage.input * COST_PER_INPUT_TOKEN +
-    result.usage.output * COST_PER_OUTPUT_TOKEN;
-
   return {
     dependencies: result.data.dependencies,
     phases: result.data.phases,
     has_cycles: cycleResult.hasCycles,
     cycle_details: cycleResult.hasCycles ? cycleResult.cycleDetails : null,
-    metadata: {
-      token_usage: result.usage,
-      estimated_cost_usd: Math.round(cost * 1000) / 1000,
-      retries: result.retries,
-    },
+    metadata: buildApiMetadata(result.usage, result.retries),
   };
 }

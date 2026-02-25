@@ -19,7 +19,7 @@ import type { Epic, Story, Task, TicketLabel, Dependency, Phase, Section, Ambigu
 
 // -- State machine --
 
-type AppState =
+type WorkingState =
   | { step: "idle" }
   | { step: "previewing"; document: string; sections: Section[] }
   | { step: "decomposing"; document: string; sections: Section[] }
@@ -40,8 +40,9 @@ type AppState =
       cycleDetails: string[] | null;
       decomposeMetadata: ApiMetadata;
       dependenciesMetadata: ApiMetadata;
-    }
-  | { step: "error"; previousStep: AppState["step"]; errorMessage: string };
+    };
+
+type AppState = WorkingState | { step: "error"; previousState: WorkingState; errorMessage: string };
 
 type AppAction =
   | { type: "PREVIEW"; document: string; sections: Section[] }
@@ -57,6 +58,7 @@ type AppAction =
     }
   | { type: "ERROR"; message: string }
   | { type: "RESET" }
+  | { type: "RETRY" }
   | { type: "UPDATE_EPIC"; epicId: string; updates: Partial<Pick<Epic, "title" | "description">> }
   | {
       type: "UPDATE_STORY";
@@ -109,14 +111,19 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         decomposeMetadata: state.decomposeMetadata,
         dependenciesMetadata: action.metadata,
       };
-    case "ERROR":
+    case "ERROR": {
+      const previousState = state.step === "error" ? state.previousState : state;
       return {
         step: "error",
-        previousStep: state.step,
+        previousState,
         errorMessage: action.message,
       };
+    }
     case "RESET":
       return { step: "idle" };
+    case "RETRY":
+      if (state.step !== "error") return state;
+      return state.previousState;
     case "UPDATE_EPIC":
       if (state.step !== "complete") return state;
       return {
@@ -173,6 +180,7 @@ async function callDecompose(
   apiKey: string,
   document: string,
   sections: Section[],
+  signal?: AbortSignal,
 ): Promise<{ epics: Epic[]; ambiguities: Ambiguity[]; metadata: ApiMetadata }> {
   const res = await fetch("/api/decompose", {
     method: "POST",
@@ -181,16 +189,23 @@ async function callDecompose(
       [API_KEY_HEADER]: apiKey,
     },
     body: JSON.stringify({ document, sections }),
+    signal,
   });
 
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error ?? `Decomposition failed (${res.status})`);
-  return json.data;
+  let json: Record<string, unknown>;
+  try {
+    json = await res.json();
+  } catch {
+    throw new Error(`Decomposition failed (${res.status})`);
+  }
+  if (!res.ok) throw new Error((json.error as string) ?? `Decomposition failed (${res.status})`);
+  return json.data as { epics: Epic[]; ambiguities: Ambiguity[]; metadata: ApiMetadata };
 }
 
 async function callDependencies(
   apiKey: string,
   epics: Epic[],
+  signal?: AbortSignal,
 ): Promise<{
   dependencies: Dependency[];
   phases: Phase[];
@@ -202,7 +217,14 @@ async function callDependencies(
   const tickets = [
     ...epics.map((e) => ({ id: e.id, title: e.title, description: e.description })),
     ...epics.flatMap((e) =>
-      e.stories.map((s) => ({ id: s.id, title: s.title, description: s.title })),
+      e.stories.map((s) => ({
+        id: s.id,
+        title: s.title,
+        description: [
+          ...s.acceptance_criteria.map((ac) => `When ${ac.when}, ${ac.then}`),
+          ...s.tasks.map((t) => t.title),
+        ].join("; "),
+      })),
     ),
   ];
 
@@ -213,11 +235,23 @@ async function callDependencies(
       [API_KEY_HEADER]: apiKey,
     },
     body: JSON.stringify({ tickets }),
+    signal,
   });
 
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.error ?? `Dependency mapping failed (${res.status})`);
-  return json.data;
+  let json: Record<string, unknown>;
+  try {
+    json = await res.json();
+  } catch {
+    throw new Error(`Dependency mapping failed (${res.status})`);
+  }
+  if (!res.ok) throw new Error((json.error as string) ?? `Dependency mapping failed (${res.status})`);
+  return json.data as {
+    dependencies: Dependency[];
+    phases: Phase[];
+    has_cycles: boolean;
+    cycle_details: string[] | null;
+    metadata: ApiMetadata;
+  };
 }
 
 // -- Page component --
@@ -247,10 +281,10 @@ export default function Home() {
   useEffect(() => {
     if (state.step !== "decomposing") return;
 
-    let cancelled = false;
-    callDecompose(apiKeyRef.current, state.document, state.sections)
+    const controller = new AbortController();
+    callDecompose(apiKeyRef.current, state.document, state.sections, controller.signal)
       .then((result) => {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           dispatch({
             type: "DECOMPOSE_SUCCESS",
             epics: result.epics,
@@ -260,16 +294,15 @@ export default function Home() {
         }
       })
       .catch((err: unknown) => {
-        if (!cancelled) {
-          dispatch({
-            type: "ERROR",
-            message: err instanceof Error ? err.message : "Decomposition failed",
-          });
-        }
+        if (controller.signal.aborted) return;
+        dispatch({
+          type: "ERROR",
+          message: err instanceof Error ? err.message : "Decomposition failed",
+        });
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [state.step]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -277,10 +310,10 @@ export default function Home() {
   useEffect(() => {
     if (state.step !== "mapping") return;
 
-    let cancelled = false;
-    callDependencies(apiKeyRef.current, state.epics)
+    const controller = new AbortController();
+    callDependencies(apiKeyRef.current, state.epics, controller.signal)
       .then((result) => {
-        if (!cancelled) {
+        if (!controller.signal.aborted) {
           dispatch({
             type: "MAPPING_SUCCESS",
             dependencies: result.dependencies,
@@ -292,16 +325,15 @@ export default function Home() {
         }
       })
       .catch((err: unknown) => {
-        if (!cancelled) {
-          dispatch({
-            type: "ERROR",
-            message: err instanceof Error ? err.message : "Dependency mapping failed",
-          });
-        }
+        if (controller.signal.aborted) return;
+        dispatch({
+          type: "ERROR",
+          message: err instanceof Error ? err.message : "Dependency mapping failed",
+        });
       });
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [state.step]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -340,7 +372,11 @@ export default function Home() {
         )}
 
         {state.step === "error" && (
-          <ErrorView message={state.errorMessage} onReset={() => dispatch({ type: "RESET" })} />
+          <ErrorView
+            message={state.errorMessage}
+            onRetry={() => dispatch({ type: "RETRY" })}
+            onReset={() => dispatch({ type: "RESET" })}
+          />
         )}
       </main>
     </div>
@@ -529,7 +565,15 @@ function CompleteView({
   );
 }
 
-function ErrorView({ message, onReset }: { message: string; onReset: () => void }) {
+function ErrorView({
+  message,
+  onRetry,
+  onReset,
+}: {
+  message: string;
+  onRetry: () => void;
+  onReset: () => void;
+}) {
   return (
     <div className="mx-auto max-w-md py-16 text-center">
       <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
@@ -537,9 +581,14 @@ function ErrorView({ message, onReset }: { message: string; onReset: () => void 
       </div>
       <h3 className="text-lg font-semibold">Something went wrong</h3>
       <p className="mt-2 text-sm text-muted-foreground">{message}</p>
-      <Button className="mt-6" onClick={onReset}>
-        Start Over
-      </Button>
+      <div className="mt-6 flex justify-center gap-2">
+        <Button variant="outline" onClick={onReset}>
+          Start Over
+        </Button>
+        <Button onClick={onRetry}>
+          Retry
+        </Button>
+      </div>
     </div>
   );
 }

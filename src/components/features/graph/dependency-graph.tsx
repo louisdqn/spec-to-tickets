@@ -1,43 +1,65 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import type { Epic, Dependency } from "@/types";
 import { generateMermaidDiagram } from "@/lib/mermaid";
+
+// Singleton: import + initialize mermaid once across all renders
+let mermaidReady: Promise<typeof import("mermaid")["default"]> | null = null;
+
+function getMermaid() {
+  if (!mermaidReady) {
+    mermaidReady = import("mermaid").then((m) => {
+      m.default.initialize({
+        startOnLoad: false,
+        theme: "neutral",
+        flowchart: {
+          useMaxWidth: true,
+          htmlLabels: true,
+          curve: "basis",
+        },
+      });
+      return m.default;
+    });
+  }
+  return mermaidReady;
+}
 
 interface DependencyGraphProps {
   epics: Epic[];
   dependencies: Dependency[];
 }
 
-export function DependencyGraph({ epics, dependencies }: DependencyGraphProps) {
+export const DependencyGraph = memo(function DependencyGraph({
+  epics,
+  dependencies,
+}: DependencyGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const instanceId = useId();
+  const renderCount = useRef(0);
+
+  const blockingCount = useMemo(
+    () => dependencies.filter((d) => d.type === "blocks").length,
+    [dependencies],
+  );
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const diagram = generateMermaidDiagram(epics, dependencies);
+    const renderId = `dep-graph-${instanceId.replace(/:/g, "")}-${++renderCount.current}`;
 
     let cancelled = false;
 
     async function renderDiagram() {
       try {
-        // Dynamic import to avoid SSR issues
-        const mermaid = (await import("mermaid")).default;
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: "neutral",
-          flowchart: {
-            useMaxWidth: true,
-            htmlLabels: true,
-            curve: "basis",
-          },
-        });
+        const mermaid = await getMermaid();
 
         if (cancelled) return;
 
-        const { svg } = await mermaid.render("dep-graph", diagram);
+        const { svg } = await mermaid.render(renderId, diagram);
         if (!cancelled && container) {
           container.innerHTML = svg;
         }
@@ -53,9 +75,7 @@ export function DependencyGraph({ epics, dependencies }: DependencyGraphProps) {
     return () => {
       cancelled = true;
     };
-  }, [epics, dependencies]);
-
-  const blockingCount = dependencies.filter((d) => d.type === "blocks").length;
+  }, [epics, dependencies, instanceId]);
 
   if (blockingCount === 0) {
     return (
@@ -81,4 +101,4 @@ export function DependencyGraph({ epics, dependencies }: DependencyGraphProps) {
       className="overflow-auto [&_svg]:max-w-full"
     />
   );
-}
+});

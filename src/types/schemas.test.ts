@@ -243,9 +243,8 @@ describe("DecompositionResultSchema", () => {
   });
 
   it("rejects empty epics array", () => {
-    // Empty array is technically valid per schema (no minItems on epics array)
     const result = DecompositionResultSchema.safeParse({ epics: [] });
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it("defaults ambiguities to empty array when absent", () => {

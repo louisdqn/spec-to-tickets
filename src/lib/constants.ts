@@ -9,6 +9,16 @@ export const LLM_MAX_RETRIES = 2;
 export const COST_PER_INPUT_TOKEN = 3 / 1_000_000; // $3 per 1M tokens
 export const COST_PER_OUTPUT_TOKEN = 15 / 1_000_000; // $15 per 1M tokens
 
+/** Build API metadata from LLM call result. Single source of truth for cost calculation. */
+export function buildApiMetadata(usage: { input: number; output: number }, retries: number) {
+  const cost = usage.input * COST_PER_INPUT_TOKEN + usage.output * COST_PER_OUTPUT_TOKEN;
+  return {
+    token_usage: usage,
+    estimated_cost_usd: Math.round(cost * 1000) / 1000,
+    retries,
+  };
+}
+
 // Input limits
 export const MAX_DOCUMENT_LENGTH = 50_000; // characters
 export const MAX_DOCUMENT_TOKENS_WARNING = 5_000; // warn user above this

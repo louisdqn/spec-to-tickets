@@ -277,3 +277,203 @@ describe("appReducer — UPDATE_TASK", () => {
     expect(next.phases).toBe(state.phases);
   });
 });
+
+describe("appReducer — PREVIEW", () => {
+  it("transitions from idle to previewing", () => {
+    const state = { step: "idle" as const };
+    const sections = [{ heading: "Intro", level: 1, content: "Content" }];
+    const next = appReducer(state, { type: "PREVIEW", document: "# PRD", sections });
+    expect(next.step).toBe("previewing");
+    if (next.step !== "previewing") throw new Error("wrong step");
+    expect(next.document).toBe("# PRD");
+    expect(next.sections).toEqual(sections);
+  });
+});
+
+describe("appReducer — START_DECOMPOSE", () => {
+  it("transitions from previewing to decomposing", () => {
+    const state = {
+      step: "previewing" as const,
+      document: "# PRD",
+      sections: [{ heading: "Intro", level: 1, content: "Content" }],
+    };
+    const next = appReducer(state, { type: "START_DECOMPOSE" });
+    expect(next.step).toBe("decomposing");
+    if (next.step !== "decomposing") throw new Error("wrong step");
+    expect(next.document).toBe("# PRD");
+    expect(next.sections).toEqual(state.sections);
+  });
+
+  it("is no-op when not in previewing step", () => {
+    const state = { step: "idle" as const };
+    const next = appReducer(state, { type: "START_DECOMPOSE" });
+    expect(next).toBe(state);
+  });
+});
+
+describe("appReducer — DECOMPOSE_SUCCESS", () => {
+  it("transitions from decomposing to mapping with epics", () => {
+    const state = {
+      step: "decomposing" as const,
+      document: "# PRD",
+      sections: [{ heading: "Intro", level: 1, content: "Content" }],
+    };
+    const next = appReducer(state, {
+      type: "DECOMPOSE_SUCCESS",
+      epics: mockEpics,
+      ambiguities: mockAmbiguities,
+      metadata: mockMetadata,
+    });
+    expect(next.step).toBe("mapping");
+    if (next.step !== "mapping") throw new Error("wrong step");
+    expect(next.epics).toEqual(mockEpics);
+    expect(next.ambiguities).toEqual(mockAmbiguities);
+    expect(next.document).toBe("# PRD");
+  });
+
+  it("is no-op when not in decomposing step", () => {
+    const state = { step: "idle" as const };
+    const next = appReducer(state, {
+      type: "DECOMPOSE_SUCCESS",
+      epics: mockEpics,
+      ambiguities: mockAmbiguities,
+      metadata: mockMetadata,
+    });
+    expect(next).toBe(state);
+  });
+});
+
+describe("appReducer — MAPPING_SUCCESS", () => {
+  it("transitions from mapping to complete", () => {
+    const state = {
+      step: "mapping" as const,
+      document: "# PRD",
+      epics: structuredClone(mockEpics),
+      ambiguities: mockAmbiguities,
+      decomposeMetadata: mockMetadata,
+    };
+    const next = appReducer(state, {
+      type: "MAPPING_SUCCESS",
+      dependencies: mockDependencies,
+      phases: mockPhases,
+      metadata: mockMetadata,
+      hasCycles: false,
+      cycleDetails: null,
+    });
+    expect(next.step).toBe("complete");
+    if (next.step !== "complete") throw new Error("wrong step");
+    expect(next.epics).toEqual(mockEpics);
+    expect(next.dependencies).toEqual(mockDependencies);
+    expect(next.phases).toEqual(mockPhases);
+    expect(next.decomposeMetadata).toEqual(mockMetadata);
+    expect(next.dependenciesMetadata).toEqual(mockMetadata);
+  });
+
+  it("is no-op when not in mapping step", () => {
+    const state = { step: "idle" as const };
+    const next = appReducer(state, {
+      type: "MAPPING_SUCCESS",
+      dependencies: mockDependencies,
+      phases: mockPhases,
+      metadata: mockMetadata,
+      hasCycles: false,
+      cycleDetails: null,
+    });
+    expect(next).toBe(state);
+  });
+});
+
+describe("appReducer — RESET", () => {
+  it("resets to idle from complete", () => {
+    const state = completeState();
+    const next = appReducer(state, { type: "RESET" });
+    expect(next).toEqual({ step: "idle" });
+  });
+
+  it("resets to idle from error", () => {
+    const errorState = {
+      step: "error" as const,
+      previousState: { step: "decomposing" as const, document: "# PRD", sections: [] },
+      errorMessage: "Failed",
+    };
+    const next = appReducer(errorState, { type: "RESET" });
+    expect(next).toEqual({ step: "idle" });
+  });
+});
+
+describe("appReducer — ERROR & RETRY", () => {
+  it("stores previous state on error", () => {
+    const state = {
+      step: "decomposing" as const,
+      document: "# PRD",
+      sections: [{ heading: "Intro", level: 1, content: "Content" }],
+    };
+    const next = appReducer(state, { type: "ERROR", message: "Network error" });
+    expect(next.step).toBe("error");
+    if (next.step !== "error") throw new Error("wrong step");
+    expect(next.errorMessage).toBe("Network error");
+    expect(next.previousState).toEqual(state);
+  });
+
+  it("preserves mapping state with epics on error", () => {
+    const state = {
+      step: "mapping" as const,
+      document: "# PRD",
+      epics: structuredClone(mockEpics),
+      ambiguities: mockAmbiguities,
+      decomposeMetadata: mockMetadata,
+    };
+    const next = appReducer(state, { type: "ERROR", message: "Timeout" });
+    if (next.step !== "error") throw new Error("wrong step");
+    expect(next.previousState.step).toBe("mapping");
+    if (next.previousState.step === "mapping") {
+      expect(next.previousState.epics).toEqual(mockEpics);
+    }
+  });
+
+  it("RETRY restores previous state", () => {
+    const decomposingState = {
+      step: "decomposing" as const,
+      document: "# PRD",
+      sections: [{ heading: "Intro", level: 1, content: "Content" }],
+    };
+    const errorState = appReducer(decomposingState, { type: "ERROR", message: "Failed" });
+    const retried = appReducer(errorState, { type: "RETRY" });
+    expect(retried).toEqual(decomposingState);
+  });
+
+  it("RETRY from mapping error restores epics", () => {
+    const mappingState = {
+      step: "mapping" as const,
+      document: "# PRD",
+      epics: structuredClone(mockEpics),
+      ambiguities: mockAmbiguities,
+      decomposeMetadata: mockMetadata,
+    };
+    const errorState = appReducer(mappingState, { type: "ERROR", message: "Timeout" });
+    const retried = appReducer(errorState, { type: "RETRY" });
+    expect(retried.step).toBe("mapping");
+    if (retried.step === "mapping") {
+      expect(retried.epics).toEqual(mockEpics);
+    }
+  });
+
+  it("RETRY is no-op when not in error state", () => {
+    const state = completeState();
+    const next = appReducer(state, { type: "RETRY" });
+    expect(next).toBe(state);
+  });
+
+  it("nested errors preserve original working state", () => {
+    const decomposingState = {
+      step: "decomposing" as const,
+      document: "# PRD",
+      sections: [{ heading: "Intro", level: 1, content: "Content" }],
+    };
+    const error1 = appReducer(decomposingState, { type: "ERROR", message: "First" });
+    const error2 = appReducer(error1, { type: "ERROR", message: "Second" });
+    if (error2.step !== "error") throw new Error("wrong step");
+    expect(error2.errorMessage).toBe("Second");
+    expect(error2.previousState).toEqual(decomposingState);
+  });
+});

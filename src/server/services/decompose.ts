@@ -7,7 +7,7 @@ import {
   DECOMPOSE_TOOL,
   buildDecomposeUserMessage,
 } from "@/server/prompts/decompose";
-import { LLM_MAX_TOKENS_DECOMPOSE, COST_PER_INPUT_TOKEN, COST_PER_OUTPUT_TOKEN } from "@/lib/constants";
+import { LLM_MAX_TOKENS_DECOMPOSE, buildApiMetadata } from "@/lib/constants";
 
 interface DecomposeServiceResult {
   epics: DecompositionResult["epics"];
@@ -48,10 +48,6 @@ export async function decompose(
     DecompositionResultSchema,
   );
 
-  const cost =
-    result.usage.input * COST_PER_INPUT_TOKEN +
-    result.usage.output * COST_PER_OUTPUT_TOKEN;
-
   const epics = result.data.epics.map((epic) => ({
     ...epic,
     stories: epic.stories.map((story) => ({
@@ -67,11 +63,7 @@ export async function decompose(
   return {
     epics,
     ambiguities: result.data.ambiguities,
-    metadata: {
-      token_usage: result.usage,
-      estimated_cost_usd: Math.round(cost * 1000) / 1000,
-      retries: result.retries,
-    },
+    metadata: buildApiMetadata(result.usage, result.retries),
   };
 }
 
@@ -89,7 +81,7 @@ const LABEL_KEYWORDS: Record<TicketLabel, string[]> = {
   testing: ["test", "spec", "e2e", "unit test", "integration test", "coverage", "assert"],
 };
 
-function inferLabels(text: string): TicketLabel[] {
+export function inferLabels(text: string): TicketLabel[] {
   const lower = text.toLowerCase();
   const matched: TicketLabel[] = [];
   for (const [label, keywords] of Object.entries(LABEL_KEYWORDS) as [TicketLabel, string[]][]) {

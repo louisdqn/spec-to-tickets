@@ -50,15 +50,26 @@ export async function callWithRetry<T>(
   for (let attempt = 0; attempt <= LLM_MAX_RETRIES; attempt++) {
     const messages = buildMessages(userMessage, validationErrors, attempt);
 
-    const response = await client.messages.create({
-      model: LLM_MODEL,
-      max_tokens: maxTokens,
-      temperature: LLM_TEMPERATURE,
-      system: systemPrompt,
-      tools: [{ ...tool, type: "custom" as const }],
-      tool_choice: { type: "tool" as const, name: tool.name },
-      messages,
-    });
+    let response: Awaited<ReturnType<typeof client.messages.create>>;
+    try {
+      response = await client.messages.create({
+        model: LLM_MODEL,
+        max_tokens: maxTokens,
+        temperature: LLM_TEMPERATURE,
+        system: systemPrompt,
+        tools: [{ ...tool, type: "custom" as const }],
+        tool_choice: { type: "tool" as const, name: tool.name },
+        messages,
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown API error";
+      const statusCode = (err as { status?: number }).status ?? 502;
+      throw new AppError(
+        `Anthropic API error: ${message}`,
+        "LLM_API_ERROR",
+        statusCode,
+      );
+    }
 
     totalUsage.input += response.usage.input_tokens;
     totalUsage.output += response.usage.output_tokens;
