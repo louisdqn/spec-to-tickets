@@ -1,7 +1,7 @@
 // LLM configuration
 export const LLM_MODEL = "claude-sonnet-4-5-20250929";
 export const LLM_TEMPERATURE = 0;
-export const LLM_MAX_TOKENS_DECOMPOSE = 8192;
+export const LLM_MAX_TOKENS_DECOMPOSE = 16384;
 export const LLM_MAX_TOKENS_DEPENDENCIES = 4096;
 export const LLM_MAX_RETRIES = 2;
 
@@ -28,6 +28,15 @@ export const API_KEY_STORAGE_KEY = "spec-to-tickets-api-key";
 export const API_KEY_HEADER = "x-api-key";
 
 // Editable field options
-export const ALL_LABELS = ["frontend", "backend", "infra", "design", "api", "database", "auth", "testing"] as const;
+export const ALL_LABELS = [
+  "frontend",
+  "backend",
+  "infra",
+  "design",
+  "api",
+  "database",
+  "auth",
+  "testing",
+] as const;
 export const T_SHIRT_SIZES = ["XS", "S", "M", "L", "XL"] as const;
 export const TASK_SIZES = ["XS", "S", "M", "L"] as const;

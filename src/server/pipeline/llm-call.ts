@@ -64,11 +64,7 @@ export async function callWithRetry<T>(
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown API error";
       const statusCode = (err as { status?: number }).status ?? 502;
-      throw new AppError(
-        `Anthropic API error: ${message}`,
-        "LLM_API_ERROR",
-        statusCode,
-      );
+      throw new AppError(`Anthropic API error: ${message}`, "LLM_API_ERROR", statusCode);
     }
 
     totalUsage.input += response.usage.input_tokens;
@@ -79,7 +75,17 @@ export async function callWithRetry<T>(
       attempt,
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
+      stopReason: response.stop_reason,
     });
+
+    // Detect truncation — output hit max_tokens before completing
+    if (response.stop_reason === "max_tokens") {
+      throw new AppError(
+        `LLM output was truncated (hit ${maxTokens} token limit). The PRD may be too large or complex for the current token budget.`,
+        "LLM_TRUNCATED",
+        422,
+      );
+    }
 
     // Extract tool_use block
     const toolUseBlock = response.content.find(
