@@ -2,7 +2,12 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { z } from "zod/v4";
 import { AppError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import { LLM_MODEL, LLM_TEMPERATURE, LLM_MAX_RETRIES } from "@/lib/constants";
+import {
+  LLM_MODEL,
+  LLM_TEMPERATURE,
+  LLM_MAX_RETRIES,
+  LLM_MODEL_CONTEXT_WINDOW,
+} from "@/lib/constants";
 import type { TokenUsage } from "@/types";
 
 /** Tool definition for the Anthropic API. */
@@ -44,6 +49,31 @@ export async function callWithRetry<T>(
   schema: z.ZodType<T>,
 ): Promise<LlmCallResult<T>> {
   const { client, systemPrompt, userMessage, tool, maxTokens } = params;
+
+  // Pre-call budget check: rough estimate input tokens (chars / 4) + tool schema overhead
+  const estimatedInputTokens =
+    Math.ceil((systemPrompt.length + userMessage.length) / 4) +
+    Math.ceil(JSON.stringify(tool.input_schema).length / 4);
+  const headroom = LLM_MODEL_CONTEXT_WINDOW - estimatedInputTokens;
+
+  if (headroom < maxTokens) {
+    logger.warn("Input token budget tight", {
+      call: tool.name,
+      estimatedInputTokens,
+      maxOutputTokens: maxTokens,
+      contextWindow: LLM_MODEL_CONTEXT_WINDOW,
+      headroom,
+    });
+
+    if (headroom < maxTokens * 0.5) {
+      throw new AppError(
+        "The PRD is too large for the model context window. Try a shorter document or break it into sections.",
+        "INPUT_TOO_LARGE",
+        422,
+      );
+    }
+  }
+
   let validationErrors: string[] = [];
   const totalUsage: TokenUsage = { input: 0, output: 0 };
 

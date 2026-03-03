@@ -1,9 +1,10 @@
 // LLM configuration
 export const LLM_MODEL = "claude-sonnet-4-5-20250929";
 export const LLM_TEMPERATURE = 0;
-export const LLM_MAX_TOKENS_DECOMPOSE = 16384;
-export const LLM_MAX_TOKENS_DEPENDENCIES = 4096;
+export const LLM_MAX_TOKENS_DECOMPOSE = 32768;
+export const LLM_MAX_TOKENS_DEPENDENCIES = 8192;
 export const LLM_MAX_RETRIES = 2;
+export const LLM_MODEL_CONTEXT_WINDOW = 200_000;
 
 // Cost per token (Sonnet 4 pricing)
 export const COST_PER_INPUT_TOKEN = 3 / 1_000_000; // $3 per 1M tokens

@@ -3,6 +3,7 @@ import { z } from "zod/v4";
 import { callWithRetry } from "./llm-call";
 import type { LlmCallParams, ToolDefinition } from "./llm-call";
 import { AppError } from "@/lib/errors";
+import { LLM_MODEL_CONTEXT_WINDOW } from "@/lib/constants";
 
 // -- Test schema --
 
@@ -233,6 +234,35 @@ describe("callWithRetry", () => {
       statusCode: 401,
       message: expect.stringContaining("Invalid API key"),
     });
+  });
+
+  it("throws INPUT_TOO_LARGE when input exhausts context window", async () => {
+    const client = makeMockClient([makeResponse({ name: "ok", count: 1 })]);
+    // Create a system prompt large enough to exhaust the context window.
+    // Budget check: estimatedInput = ceil((prompt + user) / 4) + ceil(schema / 4)
+    // We need headroom < maxTokens * 0.5 to trigger the hard error.
+    const hugePrompt = "x".repeat(LLM_MODEL_CONTEXT_WINDOW * 4);
+    const params: LlmCallParams = {
+      ...makeParams(client),
+      systemPrompt: hugePrompt,
+      maxTokens: 32768,
+    };
+
+    await expect(callWithRetry(params, TestSchema)).rejects.toMatchObject({
+      code: "INPUT_TOO_LARGE",
+      statusCode: 422,
+    });
+    // Should NOT have called the API
+    expect(client.messages.create).not.toHaveBeenCalled();
+  });
+
+  it("allows calls when input is within budget", async () => {
+    const client = makeMockClient([makeResponse({ name: "ok", count: 1 })]);
+    const params = makeParams(client);
+
+    // Default test params have tiny prompts — should pass budget check
+    const result = await callWithRetry(params, TestSchema);
+    expect(result.data).toEqual({ name: "ok", count: 1 });
   });
 
   it("passes correct parameters to Anthropic SDK", async () => {
