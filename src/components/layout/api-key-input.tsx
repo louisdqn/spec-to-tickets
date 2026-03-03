@@ -1,43 +1,49 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useSyncExternalStore } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { API_KEY_STORAGE_KEY } from "@/lib/constants";
 
-export function ApiKeyInput({
-  onKeyChange,
-}: {
-  onKeyChange: (key: string) => void;
-}) {
-  const [key, setKey] = useState("");
+const emptyString = () => "";
+
+function subscribeStorage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
+
+function getStoredKey() {
+  return localStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
+}
+
+export function ApiKeyInput({ onKeyChange }: { onKeyChange: (key: string) => void }) {
+  const savedKey = useSyncExternalStore(subscribeStorage, getStoredKey, emptyString);
+  const [editValue, setEditValue] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+
+  const isSaved = !!savedKey && !isEditing;
+  const displayValue = isEditing ? editValue : savedKey;
 
   useEffect(() => {
-    const stored = localStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
-    if (stored) {
-      setKey(stored);
-      setIsSaved(true);
-      onKeyChange(stored);
-    }
-    setHydrated(true);
-  }, [onKeyChange]);
+    onKeyChange(savedKey);
+  }, [savedKey, onKeyChange]);
 
   const handleSave = useCallback(() => {
-    if (!key.trim()) return;
-    localStorage.setItem(API_KEY_STORAGE_KEY, key.trim());
-    setIsSaved(true);
-    onKeyChange(key.trim());
-  }, [key, onKeyChange]);
+    const trimmed = editValue.trim();
+    if (!trimmed) return;
+    localStorage.setItem(API_KEY_STORAGE_KEY, trimmed);
+    window.dispatchEvent(new StorageEvent("storage"));
+    setIsEditing(false);
+    setEditValue("");
+  }, [editValue]);
 
   const handleClear = useCallback(() => {
     localStorage.removeItem(API_KEY_STORAGE_KEY);
-    setKey("");
-    setIsSaved(false);
-    onKeyChange("");
-  }, [onKeyChange]);
+    window.dispatchEvent(new StorageEvent("storage"));
+    setIsEditing(false);
+    setEditValue("");
+  }, []);
 
   return (
     <div className="flex w-full items-center gap-2 sm:w-auto">
@@ -45,10 +51,10 @@ export function ApiKeyInput({
         <Input
           type={isVisible ? "text" : "password"}
           placeholder="sk-ant-..."
-          value={key}
+          value={displayValue}
           onChange={(e) => {
-            setKey(e.target.value);
-            setIsSaved(false);
+            setEditValue(e.target.value);
+            setIsEditing(true);
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSave();
@@ -64,7 +70,7 @@ export function ApiKeyInput({
         </button>
       </div>
       {!isSaved ? (
-        <Button size="sm" variant="secondary" onClick={handleSave} disabled={!key.trim()}>
+        <Button size="sm" variant="secondary" onClick={handleSave} disabled={!displayValue.trim()}>
           Save
         </Button>
       ) : (

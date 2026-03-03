@@ -3,8 +3,8 @@
 > AI-powered tool that transforms Product Requirements Documents into structured,
 > dependency-mapped engineering tickets.
 
-**Last updated:** 2026-02-24
-**Status:** Pre-implementation planning
+**Last updated:** 2026-03-03
+**Status:** M1 complete, M2 complete — deployed on Railway
 
 ---
 
@@ -55,13 +55,13 @@ tickets in under 30 seconds.
 | Validation | Zod | Runtime validation of LLM output; type inference for TypeScript; composable schemas |
 | Markdown parsing | unified + remark | Client-side parsing; extensible plugin ecosystem; handles real-world Markdown edge cases |
 | Graph rendering | Mermaid.js | Browser-side DAG rendering; no server dependency; wide format support |
-| Deployment | Vercel (Hobby tier) | Free, zero-config Next.js deployment; 60s function timeout sufficient for LLM calls |
+| Deployment | Railway (Docker) | Dockerized deployment; no function timeout limit (Vercel's 60s was too short for chained LLM calls) |
 
 ### Deferred choices (Weekend 2)
 
 | Layer | Choice | Note |
 |---|---|---|
-| PDF parsing | `pdfjs-dist` | **Not** pdf-parse (unmaintained since 2021, known CVE). Use Mozilla's PDF.js instead. |
+| PDF parsing | `unpdf` | Lightweight serverless-compatible PDF text extraction. Chosen over `pdfjs-dist` (DOMMatrix issues in serverless) and `pdf-parse` (unmaintained, known CVE). |
 
 ### What we're NOT using (and why)
 
@@ -761,7 +761,7 @@ and export as JSON. End-to-end time < 30s for a 3-page PRD. Cost < $0.15.
 | Risk | Impact | Likelihood | Mitigation |
 |---|---|---|---|
 | **LLM output fails Zod validation** | Pipeline breaks, no tickets generated | Medium | tool_use constrains output format. Retry with error feedback (up to 2x). Target >90% first-attempt, >99% with retries. Include explicit format examples in prompt. |
-| **Vercel function timeout (60s)** | Request fails mid-processing | Low | Separate API routes (don't chain calls). Each call budgeted for 25s max. Client orchestrates sequentially. Monitor with `metadata.token_usage`. |
+| **Function timeout** | Request fails mid-processing | Low | Moved from Vercel (60s limit) to Railway (no timeout limit). Separate API routes with client-side orchestration remain as defense-in-depth. Monitor with `metadata.token_usage`. |
 | **API key leaked in logs/errors** | User's Anthropic key exposed | Low | Never log the key. Never include in error responses. Instantiate new client per request. Add `x-api-key` to the server's log-scrub list. |
 
 ### Medium severity
@@ -771,7 +771,7 @@ and export as JSON. End-to-end time < 30s for a 3-page PRD. Cost < $0.15.
 | **Cost exceeds $0.15 for large PRDs** | Unexpected charges for user | Medium | Count input tokens before sending. Warn user if document exceeds 5000 tokens (~4 pages). Show estimated cost before confirmation. Include actual cost in response metadata. |
 | **Mermaid.js slow on large graphs** | UI freezes on 50+ node graphs | Medium | Limit graph to Story-level nodes (exclude Tasks). For >30 nodes, offer a simplified view (phase-grouped clusters). Render in a Web Worker if needed (M2). |
 | **Real-world Markdown is messy** | Parser fails on non-standard formatting | High | Preview step lets user confirm parsed structure. If parsing produces poor results, fall back to sending raw text (the LLM handles unstructured text well). Don't block on parsing failures. |
-| **Rate limiter resets on cold starts** | Ineffective protection for shared demo key | High | Acceptable for MVP (BYOK model means each user pays their own costs). Upgrade to Vercel KV / Upstash Redis before adding a shared demo key. |
+| **Rate limiter resets on cold starts** | Ineffective protection for shared demo key | High | Acceptable for MVP (BYOK model means each user pays their own costs). Upgrade to Upstash Redis before adding a shared demo key. |
 
 ### Low severity
 

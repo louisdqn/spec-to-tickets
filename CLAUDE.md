@@ -9,7 +9,7 @@ Open-source AI tool that transforms PRDs into structured, dependency-mapped engi
 - Zod for LLM output validation + all external input
 - Mermaid.js for dependency graph rendering
 - unified/remark for Markdown parsing
-- Deployed on Vercel. No database. No auth.
+- Deployed on Railway (Docker). No database. No auth.
 
 ## Commands
 - `npm run dev` — Start dev server (port 3000)

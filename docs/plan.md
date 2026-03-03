@@ -29,26 +29,27 @@
 - [x] **Rate limiting** — IP-based, 5 decompositions/day (S)
 - [x] **Loading states** — Progress indicator showing pipeline stages (S)
 - [x] **Error handling** — User-facing error messages for all failure modes (S)
-- [ ] Deploy to Vercel, test end-to-end
-- [x] Commit + tag: "feat: core MVP" / M1-complete
+- [x] Deploy to Railway, test end-to-end (moved from Vercel due to 60s function timeout)
+- [x] Commit + tag: "feat: core MVP" / `git tag M1-complete`
 
 ## M2: Polish & Extend (Weekend 2)
-- [ ] PDF upload support (pdf-parse)
-- [ ] Inline ticket editing (title, AC, estimate, labels)
-- [ ] CSV export
-- [ ] Ambiguity detection + clarifying questions
-- [ ] Auto-labeling (frontend/backend/infra/design)
-- [ ] Responsive mobile layout
-- [ ] README with architecture diagram, demo GIF
+- [x] PDF upload support (unpdf — serverless-compatible)
+- [x] Inline ticket editing (title, AC, estimate, labels)
+- [x] CSV export
+- [x] Ambiguity detection + clarifying questions
+- [x] Auto-labeling (frontend/backend/infra/design) with colored badges + filtering
+- [x] Responsive mobile + tablet layout
+- [x] Landing page + comprehensive README
 
 ## M3: Post-MVP (Backlog)
-- Linear API direct integration
-- Jira API integration
-- Notion import support
-- Iteration history (SQLite)
-- Team config (custom scales, label taxonomies)
-- Multi-document input
+- [ ] Linear API direct integration
+- [ ] Jira API integration
+- [ ] Notion import support
+- [ ] Iteration history (SQLite)
+- [ ] Team config (custom scales, label taxonomies)
+- [ ] Multi-document input
 
 ## Current Task
-Status: M0 complete, M1 complete (code only)
-Next: Deploy to Vercel, test end-to-end → then M2
+Status: M1 complete, M2 complete
+Next: M3 backlog items (prioritize based on user feedback)
+Tag: `git tag M1-complete` on the M1 closure commit

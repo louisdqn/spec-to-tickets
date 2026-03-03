@@ -21,9 +21,7 @@ const TOOL: ToolDefinition = {
 
 function makeResponse(input: unknown, inputTokens = 100, outputTokens = 50) {
   return {
-    content: [
-      { type: "tool_use" as const, id: "tu_1", name: TOOL.name, input },
-    ],
+    content: [{ type: "tool_use" as const, id: "tu_1", name: TOOL.name, input }],
     usage: { input_tokens: inputTokens, output_tokens: outputTokens },
   };
 }
@@ -67,9 +65,7 @@ describe("callWithRetry", () => {
   });
 
   it("returns validated data on first attempt", async () => {
-    const client = makeMockClient([
-      makeResponse({ name: "hello", count: 3 }),
-    ]);
+    const client = makeMockClient([makeResponse({ name: "hello", count: 3 })]);
 
     const result = await callWithRetry(makeParams(client), TestSchema);
 
@@ -79,9 +75,7 @@ describe("callWithRetry", () => {
   });
 
   it("accumulates token usage on first attempt", async () => {
-    const client = makeMockClient([
-      makeResponse({ name: "hello", count: 1 }, 200, 80),
-    ]);
+    const client = makeMockClient([makeResponse({ name: "hello", count: 1 }, 200, 80)]);
 
     const result = await callWithRetry(makeParams(client), TestSchema);
 
@@ -120,8 +114,7 @@ describe("callWithRetry", () => {
 
     await callWithRetry(makeParams(client), TestSchema);
 
-    const secondCall = (client.messages.create as ReturnType<typeof vi.fn>)
-      .mock.calls[1][0];
+    const secondCall = (client.messages.create as ReturnType<typeof vi.fn>).mock.calls[1][0];
     // Retry should have 3 messages: original, assistant ack, error feedback
     expect(secondCall.messages).toHaveLength(3);
     expect(secondCall.messages[0].role).toBe("user");
@@ -131,15 +124,19 @@ describe("callWithRetry", () => {
   });
 
   it("throws LLM_NO_TOOL_USE when model returns no tool block", async () => {
-    const client = makeMockClient([makeTextResponse() as ReturnType<typeof makeResponse>]);
+    const client = makeMockClient([
+      makeTextResponse() as unknown as ReturnType<typeof makeResponse>,
+    ]);
 
-    await expect(callWithRetry(makeParams(client), TestSchema)).rejects.toThrow(
-      AppError,
-    );
-    await expect(callWithRetry(
-      makeParams(makeMockClient([makeTextResponse() as ReturnType<typeof makeResponse>])),
-      TestSchema,
-    )).rejects.toMatchObject({
+    await expect(callWithRetry(makeParams(client), TestSchema)).rejects.toThrow(AppError);
+    await expect(
+      callWithRetry(
+        makeParams(
+          makeMockClient([makeTextResponse() as unknown as ReturnType<typeof makeResponse>]),
+        ),
+        TestSchema,
+      ),
+    ).rejects.toMatchObject({
       code: "LLM_NO_TOOL_USE",
     });
   });
@@ -152,17 +149,19 @@ describe("callWithRetry", () => {
       makeResponse({ name: "", count: 1 }), // fail
     ]);
 
-    await expect(callWithRetry(makeParams(client), TestSchema)).rejects.toThrow(
-      AppError,
-    );
-    await expect(callWithRetry(
-      makeParams(makeMockClient([
-        makeResponse({ name: "", count: 1 }),
-        makeResponse({ name: "", count: 1 }),
-        makeResponse({ name: "", count: 1 }),
-      ])),
-      TestSchema,
-    )).rejects.toMatchObject({
+    await expect(callWithRetry(makeParams(client), TestSchema)).rejects.toThrow(AppError);
+    await expect(
+      callWithRetry(
+        makeParams(
+          makeMockClient([
+            makeResponse({ name: "", count: 1 }),
+            makeResponse({ name: "", count: 1 }),
+            makeResponse({ name: "", count: 1 }),
+          ]),
+        ),
+        TestSchema,
+      ),
+    ).rejects.toMatchObject({
       code: "LLM_VALIDATION_FAILED",
     });
   });
@@ -201,17 +200,19 @@ describe("callWithRetry", () => {
       },
     } as unknown as LlmCallParams["client"];
 
-    await expect(callWithRetry(makeParams(client), TestSchema)).rejects.toThrow(
-      AppError,
-    );
-    await expect(callWithRetry(
-      makeParams({
-        messages: {
-          create: vi.fn(async () => { throw new Error("fetch failed"); }),
-        },
-      } as unknown as LlmCallParams["client"]),
-      TestSchema,
-    )).rejects.toMatchObject({
+    await expect(callWithRetry(makeParams(client), TestSchema)).rejects.toThrow(AppError);
+    await expect(
+      callWithRetry(
+        makeParams({
+          messages: {
+            create: vi.fn(async () => {
+              throw new Error("fetch failed");
+            }),
+          },
+        } as unknown as LlmCallParams["client"]),
+        TestSchema,
+      ),
+    ).rejects.toMatchObject({
       code: "LLM_API_ERROR",
       message: expect.stringContaining("fetch failed"),
     });
@@ -221,7 +222,9 @@ describe("callWithRetry", () => {
     const sdkError = Object.assign(new Error("Invalid API key"), { status: 401 });
     const client = {
       messages: {
-        create: vi.fn(async () => { throw sdkError; }),
+        create: vi.fn(async () => {
+          throw sdkError;
+        }),
       },
     } as unknown as LlmCallParams["client"];
 
@@ -233,9 +236,7 @@ describe("callWithRetry", () => {
   });
 
   it("passes correct parameters to Anthropic SDK", async () => {
-    const client = makeMockClient([
-      makeResponse({ name: "ok", count: 1 }),
-    ]);
+    const client = makeMockClient([makeResponse({ name: "ok", count: 1 })]);
     const params = makeParams(client);
 
     await callWithRetry(params, TestSchema);
