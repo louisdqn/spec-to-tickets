@@ -36,14 +36,19 @@ function makeTextResponse(inputTokens = 100, outputTokens = 50) {
 
 function makeMockClient(responses: ReturnType<typeof makeResponse>[]) {
   let callIndex = 0;
+  const streamFn = vi.fn(() => {
+    const response = responses[callIndex];
+    if (!response) throw new Error("No more mock responses");
+    callIndex++;
+    return { finalMessage: async () => response };
+  });
   return {
     messages: {
-      create: vi.fn(async () => {
-        const response = responses[callIndex];
-        if (!response) throw new Error("No more mock responses");
-        callIndex++;
-        return response;
-      }),
+      stream: streamFn,
+      // Keep create as alias so test assertions using client.messages.create still work
+      get create() {
+        return streamFn;
+      },
     },
   } as unknown as LlmCallParams["client"];
 }
@@ -195,7 +200,7 @@ describe("callWithRetry", () => {
   it("wraps network errors as LLM_API_ERROR", async () => {
     const client = {
       messages: {
-        create: vi.fn(async () => {
+        stream: vi.fn(() => {
           throw new Error("fetch failed");
         }),
       },
@@ -206,7 +211,7 @@ describe("callWithRetry", () => {
       callWithRetry(
         makeParams({
           messages: {
-            create: vi.fn(async () => {
+            stream: vi.fn(() => {
               throw new Error("fetch failed");
             }),
           },
@@ -223,7 +228,7 @@ describe("callWithRetry", () => {
     const sdkError = Object.assign(new Error("Invalid API key"), { status: 401 });
     const client = {
       messages: {
-        create: vi.fn(async () => {
+        stream: vi.fn(() => {
           throw sdkError;
         }),
       },

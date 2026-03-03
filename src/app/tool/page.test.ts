@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { appReducer } from "./page";
+import { appReducer } from "./reducer";
 import type { Epic, Ambiguity, Dependency, Phase, ApiMetadata } from "@/types";
 
 // -- Test fixtures --
@@ -26,8 +26,20 @@ const mockEpics: Epic[] = [
         estimate: "M",
         labels: ["frontend", "backend"],
         tasks: [
-          { id: "TASK-001", title: "Create login form component", description: "Build the form", estimate: "S", labels: ["frontend"] },
-          { id: "TASK-002", title: "Add form validation logic", description: "Validate inputs", estimate: "XS", labels: ["frontend"] },
+          {
+            id: "TASK-001",
+            title: "Create login form component",
+            description: "Build the form",
+            estimate: "S",
+            labels: ["frontend"],
+          },
+          {
+            id: "TASK-002",
+            title: "Add form validation logic",
+            description: "Validate inputs",
+            estimate: "XS",
+            labels: ["frontend"],
+          },
         ],
       },
       {
@@ -65,9 +77,7 @@ const mockDependencies: Dependency[] = [
   { from_id: "STORY-002", to_id: "STORY-001", type: "blocks" },
 ];
 
-const mockPhases: Phase[] = [
-  { phase_number: 1, name: "Foundation", ticket_ids: ["EPIC-001"] },
-];
+const mockPhases: Phase[] = [{ phase_number: 1, name: "Foundation", ticket_ids: ["EPIC-001"] }];
 
 function completeState() {
   return {

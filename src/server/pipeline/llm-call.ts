@@ -82,7 +82,7 @@ export async function callWithRetry<T>(
 
     let response: Awaited<ReturnType<typeof client.messages.create>>;
     try {
-      response = await client.messages.create({
+      const stream = client.messages.stream({
         model: LLM_MODEL,
         max_tokens: maxTokens,
         temperature: LLM_TEMPERATURE,
@@ -91,6 +91,7 @@ export async function callWithRetry<T>(
         tool_choice: { type: "tool" as const, name: tool.name },
         messages,
       });
+      response = await stream.finalMessage();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown API error";
       const statusCode = (err as { status?: number }).status ?? 502;
